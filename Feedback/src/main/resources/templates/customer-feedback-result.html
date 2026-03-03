@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Feedback Result</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; }
+        header { background: #2c3e50; color: #fff; padding: 16px 24px; }
+        main { max-width: 700px; margin: 30px auto; background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+        .success { color: #27ae60; font-weight: bold; }
+        .error { color: #c0392b; font-weight: bold; }
+        a { color: #3498db; text-decoration: none; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Feedback</h1>
+</header>
+<main>
+    <p th:if="${success}" class="success">Thank you! Your feedback for ticket
+        <strong th:text="${ticketId}"></strong> has been recorded.</p>
+    <p th:if="${!success}" class="error">Ticket not found. Please check the ID.</p>
+
+    <p style="margin-top: 16px;">
+        <a th:href="@{/customer/my-tickets}">&larr; Back to my tickets</a> |
+        <a th:href="@{/}">Home</a>
+    </p>
+</main>
+</body>
+</html>
+

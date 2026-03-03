@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Admin Dashboard</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; }
+        header { background: #2c3e50; color: #fff; padding: 16px 24px; }
+        main { max-width: 1000px; margin: 30px auto; background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { padding: 8px; border-bottom: 1px solid #e0e4ea; text-align: left; vertical-align: top; }
+        th { background: #f0f3f8; }
+        .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #e3f2fd; }
+        .message { margin-top: 8px; color: #27ae60; }
+        .error { margin-top: 8px; color: #c0392b; }
+        input[type="text"], select { padding: 4px 6px; border-radius: 4px; border: 1px solid #d0d4da; width: 100%; box-sizing: border-box; }
+        textarea { width: 100%; padding: 4px 6px; border-radius: 4px; border: 1px solid #d0d4da; resize: vertical; }
+        input[type="password"] { width: 100%; padding: 4px 6px; border-radius: 4px; border: 1px solid #d0d4da; }
+        button { padding: 6px 12px; border-radius: 4px; border: none; background: #3498db; color: #fff; cursor: pointer; margin-top: 4px; }
+        a { color: #3498db; text-decoration: none; }
+        .actions form { margin-bottom: 6px; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Admin Dashboard</h1>
+</header>
+<main>
+    <p th:if="${message}" class="message" th:text="${message}"></p>
+    <p th:if="${error}" class="error" th:text="${error}"></p>
+
+    <table>
+        <thead>
+        <tr>
+            <th>ID</th>
+            <th>Customer</th>
+            <th>Subject</th>
+            <th>Status</th>
+            <th>Admin Reply</th>
+            <th>Feedback</th>
+            <th>Actions</th>
+        </tr>
+        </thead>
+        <tbody>
+        <tr th:each="t : ${tickets}">
+            <td th:text="${t.id}"></td>
+            <td th:text="${t.customerName}"></td>
+            <td th:text="${t.subject}"></td>
+            <td><span class="pill" th:text="${t.status}"></span></td>
+            <td th:text="${t.adminReply}">-</td>
+            <td>
+                <span th:if="${t.feedback != null}" th:text="${t.feedback.rating + '/5'}"></span>
+                <span th:if="${t.feedback == null}">No feedback</span>
+            </td>
+            <td class="actions">
+                <form th:action="@{/admin/reply}" method="post">
+                    <input type="hidden" name="ticketId" th:value="${t.id}">
+                    <input type="text" name="reply" placeholder="Reply message">
+                    <input type="password" name="password" placeholder="Admin password">
+                    <button type="submit">Save Reply</button>
+                </form>
+                <form th:action="@{/admin/status}" method="post">
+                    <input type="hidden" name="ticketId" th:value="${t.id}">
+                    <select name="status">
+                        <option th:value="OPEN">OPEN</option>
+                        <option th:value="IN_PROGRESS">IN_PROGRESS</option>
+                        <option th:value="RESOLVED">RESOLVED</option>
+                        <option th:value="CLOSED">CLOSED</option>
+                    </select>
+                    <input type="password" name="password" placeholder="Admin password">
+                    <button type="submit">Update Status</button>
+                </form>
+            </td>
+        </tr>
+        </tbody>
+    </table>
+
+    <p style="margin-top: 16px;">
+        <a th:href="@{/}">&larr; Back to home</a>
+    </p>
+</main>
+</body>
+</html>
+

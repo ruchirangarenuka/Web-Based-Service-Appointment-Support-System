@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Give Feedback</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; }
+        header { background: #2c3e50; color: #fff; padding: 16px 24px; }
+        main { max-width: 700px; margin: 30px auto; background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+        label { display: block; margin-top: 12px; font-weight: bold; }
+        input[type="number"], textarea { width: 100%; padding: 8px; margin-top: 4px; border-radius: 4px; border: 1px solid #d0d4da; }
+        textarea { min-height: 100px; resize: vertical; }
+        button { margin-top: 16px; padding: 10px 18px; background: #27ae60; border: none; color: #fff; border-radius: 4px; cursor: pointer; }
+        a { color: #3498db; text-decoration: none; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Give Feedback</h1>
+</header>
+<main>
+    <form th:action="@{/customer/feedback}" method="post">
+        <input type="hidden" name="ticketId" th:value="${ticketId}">
+
+        <label for="rating">Rating (1-5)</label>
+        <input id="rating" name="rating" type="number" min="1" max="5" required>
+
+        <label for="comments">Comments</label>
+        <textarea id="comments" name="comments"></textarea>
+
+        <button type="submit">Submit Feedback</button>
+    </form>
+    <p style="margin-top: 16px;">
+        <a th:href="@{/customer/my-tickets}">&larr; Back to my tickets</a>
+    </p>
+</main>
+</body>
+</html>
+

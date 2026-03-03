@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Ticket Created</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; }
+        header { background: #2c3e50; color: #fff; padding: 16px 24px; }
+        main { max-width: 700px; margin: 30px auto; background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+        a { color: #3498db; text-decoration: none; }
+        .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #e3f2fd; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>Ticket Created</h1>
+</header>
+<main>
+    <p>Your ticket has been created successfully.</p>
+    <p><strong>Ticket ID:</strong> <span th:text="${ticket.id}"></span></p>
+    <p><strong>Subject:</strong> <span th:text="${ticket.subject}"></span></p>
+    <p><strong>Status:</strong> <span class="pill" th:text="${ticket.status}"></span></p>
+
+    <p style="margin-top: 16px;">
+        <a th:href="@{/customer/new}">Create another ticket</a> |
+        <a th:href="@{/customer/my-tickets}">View my tickets</a> |
+        <a th:href="@{/}">Home</a>
+    </p>
+</main>
+</body>
+</html>
+

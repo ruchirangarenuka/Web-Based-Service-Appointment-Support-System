@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>My Tickets</title>
+    <style>
+        body { font-family: Arial, sans-serif; background: #f4f6f9; margin: 0; }
+        header { background: #2c3e50; color: #fff; padding: 16px 24px; }
+        main { max-width: 900px; margin: 30px auto; background: #fff; padding: 24px; border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,.1); }
+        table { width: 100%; border-collapse: collapse; margin-top: 16px; }
+        th, td { padding: 8px; border-bottom: 1px solid #e0e4ea; text-align: left; }
+        th { background: #f0f3f8; }
+        label { font-weight: bold; }
+        input[type="text"] { padding: 6px; border-radius: 4px; border: 1px solid #d0d4da; }
+        button { padding: 6px 12px; border-radius: 4px; border: none; background: #3498db; color: #fff; cursor: pointer; }
+        a { color: #3498db; text-decoration: none; }
+        .pill { display: inline-block; padding: 2px 8px; border-radius: 999px; background: #e3f2fd; }
+    </style>
+</head>
+<body>
+<header>
+    <h1>My Tickets</h1>
+</header>
+<main>
+    <form th:action="@{/customer/my-tickets}" method="get">
+        <label for="name">Enter your name to view tickets:</label>
+        <input id="name" name="name" type="text" th:value="${name}">
+        <button type="submit">Search</button>
+    </form>
+
+    <div th:if="${tickets != null}">
+        <h2 th:text="'Tickets for ' + ${name}"></h2>
+        <table th:if="${#lists.size(tickets) > 0}">
+            <thead>
+            <tr>
+                <th>ID</th>
+                <th>Subject</th>
+                <th>Status</th>
+                <th>Admin Reply</th>
+                <th>Feedback</th>
+                <th>Actions</th>
+            </tr>
+            </thead>
+            <tbody>
+            <tr th:each="t : ${tickets}">
+                <td th:text="${t.id}"></td>
+                <td th:text="${t.subject}"></td>
+                <td><span class="pill" th:text="${t.status}"></span></td>
+                <td th:text="${t.adminReply}">-</td>
+                <td>
+                    <span th:if="${t.feedback != null}" th:text="${t.feedback.rating + '/5'}"></span>
+                    <span th:if="${t.feedback == null}">No feedback</span>
+                </td>
+                <td>
+                    <a th:href="@{'/customer/feedback/' + ${t.id}}">Give feedback</a>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+        <p th:if="${#lists.size(tickets) == 0}">
+            No tickets found for this name.
+        </p>
+    </div>
+
+    <p style="margin-top: 16px;">
+        <a th:href="@{/}">&larr; Back to home</a>
+    </p>
+</main>
+</body>
+</html>
+

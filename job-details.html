@@ -1,0 +1,139 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Job Details — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}"/>
+  <style>
+    .sidebar { background: linear-gradient(180deg, #1e2d42 0%, #151f2e 100%); }
+    .job-details-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+    .details-card { background: #fff; border-radius: 12px; padding: 24px; box-shadow: 0 4px 12px rgba(0,0,0,0.05); }
+    .details-card h4 { margin-top: 0; margin-bottom: 20px; font-size: 16px; color: #1e2d42; border-bottom: 1px solid #edf2f7; padding-bottom: 10px; display:flex; align-items:center; gap:8px; }
+    .info-list { list-style: none; padding: 0; margin: 0; }
+    .info-list li { display: flex; justify-content: space-between; margin-bottom: 12px; font-size: 14px; }
+    .info-list li span.lbl { color: #64748b; font-weight: 500; }
+    .info-list li span.val { color: #1e2d42; font-weight: 600; text-align: right; }
+    .rating-stars { color: #ffd700; font-size: 16px; margin-top:4px;}
+  </style>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/admin-sidebar :: adminSidebar('job-history')}"></div>
+  
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h4><a href="/admin/jobs/history" style="color:#64748b;text-decoration:none;"><i data-lucide="arrow-left" class="icon-sm"></i> Back</a> &nbsp; Job Details #<span th:text="${job.id}"></span></h4>
+        <p>Comprehensive overview of job information.</p>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-avatar" style="background:linear-gradient(135deg,#c0392b,#e74c3c)"
+             th:text="${currentUser?.fullName?.substring(0,1)?.toUpperCase()}">A</div>
+      </div>
+    </div>
+    
+    <div class="page-body">
+      <div class="job-details-grid">
+        
+        <!-- Left Column -->
+        <div class="left-col" style="display:flex; flex-direction:column; gap:24px;">
+          
+          <div class="details-card">
+            <h4><i data-lucide="info" class="icon-sm text-primary"></i> General Information</h4>
+            <ul class="info-list">
+              <li><span class="lbl">Service Category</span> <span class="val" th:text="${job.appointment?.service?.category}">Category</span></li>
+              <li><span class="lbl">Service Name</span> <span class="val" th:text="${job.appointment?.service?.name}">Name</span></li>
+              <li><span class="lbl">Customer Name</span> <span class="val" th:text="${job.appointment?.customer?.fullName}">Customer</span></li>
+              <li><span class="lbl">Job Status</span> 
+                <span class="val badge badge-success" th:if="${job.status.name() == 'COMPLETED'}">COMPLETED</span>
+                <span class="val badge badge-primary" th:if="${job.status.name() == 'IN_PROGRESS'}">IN_PROGRESS</span>
+                <span class="val badge badge-warning" th:if="${job.status.name() == 'PENDING'}">PENDING</span>
+                <span class="val badge badge-info" th:if="${job.status.name() == 'ASSIGNED'}">ASSIGNED</span>
+                <span class="val badge badge-danger" th:if="${job.status.name() == 'CANCELLED'}">CANCELLED</span>
+              </li>
+              <li><span class="lbl">Appointment Notes</span> <span class="val" th:text="${job.appointment?.notes ?: 'N/A'}" style="max-width:300px;"></span></li>
+              <li><span class="lbl">Staff Notes</span> <span class="val" th:text="${job.staffNotes ?: 'N/A'}" style="max-width:300px;"></span></li>
+            </ul>
+          </div>
+
+          <div class="details-card">
+            <h4><i data-lucide="clock" class="icon-sm text-primary"></i> Timeline</h4>
+            <ul class="info-list">
+              <li><span class="lbl">Appointment Date & Time</span> <span class="val" th:text="${job.appointment?.appointmentDate} + ' at ' + ${job.appointment?.appointmentTime}">Date Time</span></li>
+              <li><span class="lbl">Job Started At</span> <span class="val" th:text="${job.startedAt != null ? #temporals.format(job.startedAt, 'yyyy-MM-dd HH:mm') : 'Not Started'}">Time</span></li>
+              <li><span class="lbl">Job Completed At</span> <span class="val" th:text="${job.completedAt != null ? #temporals.format(job.completedAt, 'yyyy-MM-dd HH:mm') : 'Not Completed'}">Time</span></li>
+            </ul>
+          </div>
+          
+        </div>
+        
+        <!-- Right Column -->
+        <div class="right-col" style="display:flex; flex-direction:column; gap:24px;">
+          
+          <div class="details-card">
+            <h4><i data-lucide="user" class="icon-sm text-primary"></i> Assigned Worker</h4>
+            <div th:if="${job.assignedStaff != null}" style="display:flex; align-items:center; gap:16px;">
+              <div class="avatar" style="width:48px;height:48px;border-radius:50%;background:var(--primary);color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;font-weight:bold;"
+                   th:text="${job.assignedStaff.fullName.substring(0,1).toUpperCase()}">S</div>
+              <div>
+                <strong th:text="${job.assignedStaff.fullName}" style="display:block; font-size:16px; color:#1e2d42;">Staff Name</strong>
+                <span th:text="${job.assignedStaff.email}" style="font-size:13px; color:#64748b;">staff@example.com</span>
+              </div>
+            </div>
+            <div th:if="${job.assignedStaff == null}">
+              <p class="text-muted"><i data-lucide="user-x" class="icon-sm"></i> No staff assigned yet.</p>
+            </div>
+          </div>
+
+          <div class="details-card">
+            <h4><i data-lucide="dollar-sign" class="icon-sm text-primary"></i> Financial Details</h4>
+            <ul class="info-list" th:if="${payment != null}">
+              <li><span class="lbl">Customer Payment</span> <span class="val">£<span th:text="${payment.amount}">0.00</span></span></li>
+              <li><span class="lbl">Payment Status</span> <span class="val" th:text="${payment.status}">Status</span></li>
+              <li style="border-top:1px dashed #edf2f7; padding-top:12px; margin-top:8px;">
+                  <span class="lbl">Worker Salary Amount</span> 
+                  <span class="val" style="color:#10b981; font-size:16px;">£<span th:text="${payment.staffPayout != null ? payment.staffPayout : '0.00'}">0.00</span></span>
+              </li>
+            </ul>
+            <div th:if="${payment == null}">
+              <p class="text-muted"><i data-lucide="credit-card" class="icon-sm"></i> No payment data available.</p>
+            </div>
+          </div>
+
+          <div class="details-card">
+            <h4><i data-lucide="star" class="icon-sm text-primary"></i> Rating & Feedback</h4>
+            <div th:if="${feedback != null}">
+              <div style="font-size:24px; font-weight:800; color:#1e2d42; display:flex; align-items:center; gap:8px;">
+                <span th:text="${feedback.rating}">5</span> <span style="font-size:14px; color:#64748b; font-weight:500;">/ 5</span>
+              </div>
+              <div class="rating-stars">
+                 <!-- Generate stars based on rating (simplified display) -->
+                 <i th:each="i : ${#numbers.sequence(1, 5)}" data-lucide="star" 
+                    th:style="${i <= feedback.rating ? 'fill:#ffd700; color:#ffd700;' : 'color:#cbd5e1;'}"></i>
+              </div>
+              <p style="margin-top:12px; font-size:14px; color:#475569; background:#f8fafc; padding:12px; border-radius:8px; font-style:italic;">
+                "<span th:text="${feedback.comment}">comment</span>"
+              </p>
+            </div>
+            <div th:if="${feedback == null}">
+              <p class="text-muted"><i data-lucide="message-square" class="icon-sm"></i> No rating provided.</p>
+            </div>
+          </div>
+          
+        </div>
+        
+      </div>
+    </div>
+  </div>
+</div>
+
+<script th:src="@{/js/main.js}"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    lucide.createIcons();
+  });
+</script>
+</body>
+</html>

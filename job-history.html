@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Job History — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}" />
+  <style>
+    .sidebar {
+      background: linear-gradient(180deg, #1e2d42 0%, #151f2e 100%);
+    }
+
+    .status-badge {
+      padding: 4px 10px;
+      border-radius: 20px;
+      font-weight: 600;
+      font-size: 11px;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    /* New Grid Layout for History */
+    .history-dashboard {
+      margin-top: 24px;
+    }
+
+    .history-filters {
+      display: flex;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+
+    .history-filters .btn {
+      background: #fff;
+      border: 1px solid #e2e8f0;
+      color: #64748b;
+      font-weight: 500;
+    }
+
+    .history-filters .btn.active {
+      background: #1e2d42;
+      color: #fff;
+      border-color: #1e2d42;
+    }
+
+    .job-card-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+      gap: 20px;
+    }
+
+    .job-card {
+      background: #fff;
+      border-radius: 12px;
+      padding: 20px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.03);
+      border: 1px solid #f1f5f9;
+      position: relative;
+      transition: all 0.2s ease;
+      display: flex;
+      flex-direction: column;
+      border-top: 5px solid #e2e8f0;
+    }
+
+    .job-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 10px 25px rgba(0, 0, 0, 0.06);
+    }
+
+    /* Colored top borders based on status */
+    .job-card.status-completed {
+      border-top-color: #10b981;
+    }
+
+    .job-card.status-in_progress {
+      border-top-color: #3b82f6;
+    }
+
+    .job-card.status-pending {
+      border-top-color: #f59e0b;
+    }
+
+    .job-card.status-assigned {
+      border-top-color: #06b6d4;
+    }
+
+    .job-card.status-cancelled {
+      border-top-color: #ef4444;
+    }
+
+    .job-card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 16px;
+    }
+
+    .job-card-title {
+      font-size: 17px;
+      font-weight: 700;
+      color: #1e2d42;
+      margin: 0 0 4px 0;
+    }
+
+    .job-card-id {
+      font-size: 13px;
+      color: #94a3b8;
+      font-family: monospace;
+      font-weight: 600;
+    }
+
+    .job-card-info {
+      list-style: none;
+      padding: 0;
+      margin: 0 0 16px 0;
+      flex-grow: 1;
+    }
+
+    .job-card-info li {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 14px;
+      color: #475569;
+      margin-bottom: 8px;
+    }
+
+    .job-card-footer {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-top: 1px dashed #e2e8f0;
+      padding-top: 16px;
+      margin-top: auto;
+    }
+
+    .staff-avatar {
+      width: 28px;
+      height: 28px;
+      border-radius: 50%;
+      background: #e2e8f0;
+      color: #475569;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 12px;
+      font-weight: bold;
+    }
+
+    .unassigned-avatar {
+      border: 1px dashed #cbd5e1;
+      background: transparent;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="app-layout">
+    <div th:replace="~{fragments/admin-sidebar :: adminSidebar('job-history')}"></div>
+
+    <div class="main-content">
+      <div class="topbar">
+        <div class="topbar-left">
+          <h4><i data-lucide="history" class="icon-sm"></i> Job History Explorer</h4>
+          <p>A high-level visual overview of all job assignments.</p>
+        </div>
+        <div class="topbar-right">
+          <div class="topbar-avatar" style="background:linear-gradient(135deg,#c0392b,#e74c3c)"
+            th:text="${currentUser?.fullName?.substring(0,1)?.toUpperCase()}">A</div>
+        </div>
+      </div>
+
+      <div class="page-body">
+
+        <!-- Summary stats in a sleek mini-bar -->
+        <div class="stats-grid mb-24" style="grid-template-columns:repeat(4,1fr)">
+          <div class="stat-card" style="padding: 16px;">
+            <div class="stat-info">
+              <div class="value" style="font-size: 20px;" th:text="${jobs.?[status.name() == 'PENDING'].size()}">0</div>
+              <div class="label">Pending</div>
+            </div>
+          </div>
+          <div class="stat-card" style="padding: 16px;">
+            <div class="stat-info">
+              <div class="value" style="font-size: 20px;" th:text="${jobs.?[status.name() == 'IN_PROGRESS'].size()}">0
+              </div>
+              <div class="label">Ongoing</div>
+            </div>
+          </div>
+          <div class="stat-card" style="padding: 16px;">
+            <div class="stat-info">
+              <div class="value" style="font-size: 20px;" th:text="${jobs.?[status.name() == 'COMPLETED'].size()}">0
+              </div>
+              <div class="label">Completed</div>
+            </div>
+          </div>
+          <div class="stat-card" style="padding: 16px;">
+            <div class="stat-info">
+              <div class="value" style="font-size: 20px;" th:text="${jobs.?[status.name() == 'CANCELLED'].size()}">0
+              </div>
+              <div class="label">Cancelled</div>
+            </div>
+          </div>
+        </div>
+
+        <div th:if="${jobs.empty}">
+          <div class="empty-state card">
+            <div class="empty-icon"><i data-lucide="layers" class="icon-sm"></i></div>
+            <h4>No job records found</h4>
+            <p>There are no jobs recorded in the system yet.</p>
+          </div>
+        </div>
+
+        <div class="job-card-grid" th:unless="${jobs.empty}">
+          <!-- Iterating Jobs -->
+          <div th:each="job : ${jobs}" class="job-card"
+            th:classappend="'status-' + ${#strings.toLowerCase(job.status.name())}">
+
+            <div class="job-card-header">
+              <div>
+                <h3 class="job-card-title" th:text="${job.appointment?.service?.name}">Service Name</h3>
+                <div class="job-card-id">JOB #<span th:text="${job.id}">123</span></div>
+              </div>
+              <span class="badge status-badge" th:classappend="${job.status.name()=='PENDING'} ? 'badge-warning' :
+                                  (${job.status.name()=='ASSIGNED'} ? 'badge-info' :
+                                  (${job.status.name()=='IN_PROGRESS'} ? 'badge-primary' :
+                                  (${job.status.name()=='COMPLETED'} ? 'badge-success' : 'badge-danger')))"
+                th:text="${job.status}">STATUS</span>
+            </div>
+
+            <ul class="job-card-info">
+              <li>
+                <i data-lucide="user" style="width:16px;height:16px;color:#94a3b8;"></i>
+                <span th:text="${job.appointment?.customer?.fullName}">Customer Name</span>
+              </li>
+              <li>
+                <i data-lucide="calendar" style="width:16px;height:16px;color:#94a3b8;"></i>
+                <span th:text="${job.appointment?.appointmentDate} + ' at ' + ${job.appointment?.appointmentTime}">Date
+                  & Time</span>
+              </li>
+            </ul>
+
+            <!-- Refund Section -->
+            <div th:if="${job.status.name()=='CANCELLED' and job.appointment?.refundBankName != null}" 
+                 style="margin: 12px 0; background: #fef2f2; border: 1px dashed #fecaca; border-radius: 12px; padding: 12px;">
+                <p style="font-size: 11px; font-weight: 800; color: #b91c1c; text-transform: uppercase; margin-bottom: 6px; letter-spacing: 0.5px;">Refund Payee Details</p>
+                <div style="font-size: 13px; color: #7f1d1d; display: grid; gap: 4px;">
+                    <div><b>Bank:</b> <span th:text="${job.appointment.refundBankName}">-</span></div>
+                    <div><b>Acc No:</b> <span th:text="${job.appointment.refundAccountNumber}">-</span></div>
+                    <div><b>Payee:</b> <span th:text="${job.appointment.refundAccountHolderName}">-</span></div>
+                    <div><b>Branch:</b> <span th:text="${job.appointment.refundBranchName}">-</span></div>
+                </div>
+            </div>
+
+            <div class="job-card-footer">
+              <!-- Staff Indicator -->
+              <div style="display:flex; align-items:center; gap:8px;">
+                <div th:if="${job.assignedStaff != null}" style="display:flex; align-items:center; gap:8px;">
+                  <div class="staff-avatar" th:text="${job.assignedStaff.fullName.substring(0,1).toUpperCase()}"
+                    title="Worker">W</div>
+                  <span style="font-size: 13px; font-weight: 500; color: #1e2d42;"
+                    th:text="${job.assignedStaff.fullName}">Worker</span>
+                </div>
+                <div th:if="${job.assignedStaff == null}"
+                  style="display:flex; align-items:center; gap:8px; color:#94a3b8;">
+                  <div class="staff-avatar unassigned-avatar"><i data-lucide="user-minus"
+                      style="width:14px;height:14px;"></i></div>
+                  <span style="font-size: 13px; font-weight: 500;">Unassigned</span>
+                </div>
+              </div>
+
+              <!-- Details Button -->
+              <a th:href="@{/admin/jobs/{id}/details(id=${job.id})}" class="btn btn-sm btn-outline-primary"
+                style="padding:6px 16px; border-radius:8px; font-weight:600;">
+                View Details <i data-lucide="arrow-right" style="width:14px;height:14px;margin-left:4px;"></i>
+              </a>
+            </div>
+
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </div>
+
+  <script th:src="@{/js/main.js}"></script>
+  <script src="https://unpkg.com/lucide@latest"></script>
+  <script>
+    document.addEventListener("DOMContentLoaded", function () {
+      lucide.createIcons();
+    });
+  </script>
+</body>
+
+</html>

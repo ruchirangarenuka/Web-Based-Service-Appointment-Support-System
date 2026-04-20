@@ -1,0 +1,115 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>My Jobs — Staff</title>
+<link rel="stylesheet" th:href="@{/css/styles.css}"/></head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/staff-sidebar :: staffSidebar('jobs')}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left"><h4><i data-lucide="hammer" class="icon-sm"></i> My Jobs</h4><p>Track and update your assigned jobs</p></div>
+      <div class="topbar-right">
+        <input id="tableSearch" type="text" placeholder="Search jobs..." style="padding:9px 14px; border:1.5px solid var(--border); border-radius:10px; font-size:13px; outline:none; width:200px;"/>
+      </div>
+    </div>
+    <div class="page-body">
+      <div th:if="${success}" class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> <span th:text="${success}"></span></div>
+
+      <div class="card">
+        <div class="card-header"><h5>Assigned Jobs (<span th:text="${jobs.size()}">0</span>)</h5></div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead>
+              <tr><th>#</th><th>Customer</th><th>Service</th><th>Address</th><th>Date &amp; Time</th><th>Notes</th><th>Status</th><th>Update</th></tr>
+            </thead>
+            <tbody>
+              <tr th:if="${jobs.empty}">
+                <td colspan="8">
+                  <div class="empty-state">
+                    <div class="empty-icon"><i data-lucide="hammer" class="icon-sm"></i></div>
+                    <h4>No jobs assigned yet</h4>
+                    <p>Check back when admin assigns you a job</p>
+                  </div>
+                </td>
+              </tr>
+              <tr th:each="job : ${jobs}" data-searchable>
+                <td><strong>#<span th:text="${job.id}">1</span></strong></td>
+                <td th:text="${job.appointment?.customer?.fullName}">Customer</td>
+                <td th:text="${job.appointment?.service?.name}">Service</td>
+                <td class="text-sm" th:text="${job.appointment?.address ?: '—'}">Address</td>
+                <td>
+                  <div th:text="${job.appointment?.appointmentDate}">Date</div>
+                  <div class="text-sm text-muted" th:text="${job.appointment?.appointmentTime}">Time</div>
+                </td>
+                <td class="text-sm" th:text="${job.appointment?.notes ?: '—'}">Notes</td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${job.status.name()=='PENDING'} ? 'badge-warning' :
+                                        (${job.status.name()=='ASSIGNED'} ? 'badge-info' :
+                                        (${job.status.name()=='IN_PROGRESS'} ? 'badge-primary' :
+                                        (${job.status.name()=='COMPLETED'} ? 'badge-success' : 'badge-danger')))"
+                        th:text="${job.status}">PENDING</span>
+                </td>
+                <td>
+                  <button class="btn btn-sm btn-outline"
+                          th:onclick="'openModal(\'updateJob_' + ${job.id} + '\')'"><i data-lucide="pencil" class="icon-sm"></i> Update</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Update Job Modals -->
+<div th:each="job : ${jobs}">
+  <div class="modal-overlay" th:id="'updateJob_' + ${job.id}">
+    <div class="modal">
+      <div class="modal-header">
+        <h5><i data-lucide="pencil" class="icon-sm"></i> Update Job #<span th:text="${job.id}">1</span></h5>
+        <button class="modal-close" th:onclick="'closeModal(\'updateJob_' + ${job.id} + '\')'">×</button>
+      </div>
+      <form th:action="@{/staff/jobs/{id}/status(id=${job.id})}" method="post">
+        <div class="modal-body">
+          <div style="background:var(--body-bg); padding:14px; border-radius:10px; margin-bottom:18px;">
+            <div class="text-sm"><strong>Customer:</strong> <span th:text="${job.appointment?.customer?.fullName}"></span></div>
+            <div class="text-sm mt-8"><strong>Service:</strong> <span th:text="${job.appointment?.service?.name}"></span></div>
+            <div class="text-sm mt-8"><strong>Date:</strong> <span th:text="${job.appointment?.appointmentDate}"></span> at <span th:text="${job.appointment?.appointmentTime}"></span></div>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Update Status</label>
+            <select name="status" class="form-control no-icon" required>
+              <option value="ASSIGNED"    th:selected="${job.status.name()=='ASSIGNED'}">Assigned</option>
+              <option value="IN_PROGRESS" th:selected="${job.status.name()=='IN_PROGRESS'}">In Progress</option>
+              <option value="COMPLETED"   th:selected="${job.status.name()=='COMPLETED'}">Completed</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Staff Notes <span style="font-weight:400;color:var(--text-muted)">(optional)</span></label>
+            <textarea name="notes" class="form-control" rows="3"
+                      th:text="${job.staffNotes}" placeholder="Add any notes about this job..."></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary"
+                  th:onclick="'closeModal(\'updateJob_' + ${job.id} + '\')'">Cancel</button>
+          <button type="submit" class="btn btn-primary" style="width:auto">Save Update</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<script th:src="@{/js/main.js}"></script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    lucide.createIcons();
+  });
+</script>
+</body>
+</html>

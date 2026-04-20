@@ -1,0 +1,82 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Appointments — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}"/>
+  <style>.sidebar{background:linear-gradient(180deg,#1e2d42 0%,#151f2e 100%)}</style>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/admin-sidebar :: adminSidebar('appointments')}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left"><h4><i data-lucide="calendar" class="icon-sm"></i> Appointments</h4><p>Manage all customer appointments</p></div>
+      <div class="topbar-right">
+        <input id="tableSearch" type="text" placeholder="Search..."
+               style="padding:9px 14px;border:1.5px solid var(--border);border-radius:10px;font-size:13px;outline:none;width:220px;"/>
+        <div class="topbar-avatar" style="background:linear-gradient(135deg,#c0392b,#e74c3c)"
+             th:text="${currentUser?.fullName?.substring(0,1)?.toUpperCase()}">A</div>
+      </div>
+    </div>
+    <div class="page-body">
+      <div th:if="${success}" class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> <span th:text="${success}"></span></div>
+      <div class="card">
+        <div class="card-header"><h5>All Appointments (<span th:text="${appointments.size()}">0</span>)</h5></div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th>#</th><th>Customer</th><th>Service</th><th>Date &amp; Time</th><th>Address</th><th>Status</th></tr></thead>
+            <tbody>
+              <tr th:if="${appointments.empty}">
+                <td colspan="6"><div class="empty-state"><div class="empty-icon"><i data-lucide="calendar" class="icon-sm"></i></div><h4>No appointments yet</h4></div></td>
+              </tr>
+              <tr th:each="apt : ${appointments}" data-searchable>
+                <td><strong>#<span th:text="${apt.id}">1</span></strong></td>
+                <td>
+                  <div class="fw-600" th:text="${apt.customer?.fullName}">Customer</div>
+                  <div class="text-sm text-muted" th:text="${apt.customer?.email}">email</div>
+                </td>
+                <td>
+                  <div class="fw-600" th:text="${apt.service?.name}">Service</div>
+                  <div class="text-sm" style="color:var(--primary)">Rs. <span th:text="${#numbers.formatDecimal(apt.service?.price,0,'COMMA',2,'POINT')}">0</span></div>
+                </td>
+                <td>
+                  <div th:text="${apt.appointmentDate}">Date</div>
+                  <div class="text-sm text-muted" th:text="${apt.appointmentTime}">Time</div>
+                </td>
+                <td class="text-sm" th:text="${apt.address ?: '—'}">Addr</td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${apt.status.name()=='PENDING'} ? 'badge-warning' :
+                                        (${apt.status.name()=='CONFIRMED'} ? 'badge-info' :
+                                        (${apt.status.name()=='IN_PROGRESS'} ? 'badge-primary' :
+                                        (${apt.status.name()=='COMPLETED'} ? 'badge-success' :
+                                        (${apt.status.name()=='CANCELLED'} ? 'badge-danger' : 'badge-secondary'))))"
+                        th:text="${apt.status}">PENDING</span>
+                  <div th:if="${apt.status.name()=='CANCELLED' and apt.refundBankName != null}" 
+                       style="margin-top: 8px; font-size: 11px; background: #fff1f2; border: 1px solid #fecaca; padding: 10px; border-radius: 8px; color: #991b1b; line-height: 1.5;">
+                    <strong style="display: block; margin-bottom: 4px; border-bottom: 1px solid #fecaca; padding-bottom: 2px;"> Refund Details</strong>
+                    <div><b>Bank:</b> <span th:text="${apt.refundBankName}"></span></div>
+                    <div><b>Acc:</b> <span th:text="${apt.refundAccountNumber}"></span></div>
+                    <div><b>Name:</b> <span th:text="${apt.refundAccountHolderName}"></span></div>
+                    <div th:if="${apt.refundBranchName != null}"><b>Branch:</b> <span th:text="${apt.refundBranchName}"></span></div>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script th:src="@{/js/main.js}"></script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    lucide.createIcons();
+  });
+</script>
+</body>
+</html>

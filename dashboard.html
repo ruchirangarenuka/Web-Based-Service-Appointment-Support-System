@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Admin Dashboard — Fixora</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}"/>
+  <style>
+    /* Admin sidebar — slightly different accent to distinguish from other roles */
+    .sidebar { background: linear-gradient(180deg, #1e2d42 0%, #151f2e 100%); }
+    .sidebar-brand { border-bottom-color: rgba(255,255,255,0.06); }
+    .sidebar-brand-icon { background: rgba(220,53,69,0.2); }
+    .admin-role-chip {
+      display: inline-flex; align-items: center; gap: 5px;
+      background: rgba(220,53,69,0.15);
+      border: 1px solid rgba(220,53,69,0.3);
+      color: #ff6b7a;
+      font-size: 10px; font-weight: 700;
+      letter-spacing: 1px; text-transform: uppercase;
+      padding: 3px 9px; border-radius: 10px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+<div class="app-layout">
+
+  <!-- ADMIN SIDEBAR -->
+  <div th:replace="~{fragments/admin-sidebar :: adminSidebar('dashboard')}"></div>
+
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h4>Admin Dashboard</h4>
+        <p>Welcome back, <span th:text="${currentUser?.fullName}">Administrator</span></p>
+      </div>
+      <div class="topbar-right">
+        <div class="topbar-icon-btn">🔔<span class="notif-dot"></span></div>
+        <div class="topbar-user">
+          <div class="topbar-avatar" style="background:linear-gradient(135deg,#c0392b,#e74c3c)"
+               th:text="${currentUser?.fullName?.substring(0,1)?.toUpperCase()}">A</div>
+          <div class="topbar-user-info">
+            <div class="name" th:text="${currentUser?.fullName}">Admin</div>
+            <div class="role" style="color:#e74c3c">Administrator</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="page-body">
+      <div th:if="${success}" class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> <span th:text="${success}"></span></div>
+
+      <!-- KPI STAT CARDS -->
+      <div class="stats-grid mb-28">
+        <div class="stat-card">
+          <div class="stat-icon blue"><i data-lucide="users" class="icon-sm"></i></div>
+          <div class="stat-info">
+            <div class="value" th:text="${totalCustomers}">0</div>
+            <div class="label">Total No Of Customers </div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon teal"><i data-lucide="hard-hat" class="icon-sm"></i></div>
+          <div class="stat-info">
+            <div class="value" th:text="${totalStaff}">0</div>
+            <div class="label">Staff Members</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon yellow"><i data-lucide="calendar" class="icon-sm"></i></div>
+          <div class="stat-info">
+            <div class="value" th:text="${pendingAppointments}">0</div>
+            <div class="label">Pending Appointments</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green"><i data-lucide="check-circle" class="icon-sm"></i></div>
+          <div class="stat-info">
+            <div class="value" th:text="${completedJobs}">0</div>
+            <div class="label">Completed Jobs</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red"><i data-lucide="ticket" class="icon-sm"></i></div>
+          <div class="stat-info">
+            <div class="value" th:text="${openTickets}">0</div>
+            <div class="label">Tickets Received</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon purple"><i data-lucide="dollar-sign" class="icon-sm"></i></div>
+          <div class="stat-info">
+            <div class="value">Rs.<span th:text="${#numbers.formatDecimal(totalRevenue,0,'COMMA',0,'POINT')}">0</span></div>
+            <div class="label">Total Revenue</div>
+          </div>
+        </div>
+      </div>
+        <!-- ══════════════════════════════════════════════
+           PAYMENT SUMMARY CHARTS
+           ══════════════════════════════════════════════ -->
+        <div class="psc-heading">
+            <i data-lucide="pie-chart" class="icon-sm"></i> Payment Summary
+        </div>
+
+        <div class="psc-grid">
+
+            <!-- Card 1 : Payment Status — Donut chart -->
+            <div class="psc-card psc-blue">
+                <div class="psc-card-hdr">
+                    <div>
+                        <div class="psc-card-title">Payment Status</div>
+                        <div class="psc-card-sub">Breakdown by current status</div>
+                    </div>
+                    <span class="psc-badge psc-b-blue">Donut</span>
+                </div>
+
+                <!--
+                  Data attributes read by main.js — values injected by Thymeleaf.
+                  AdminController must add: paymentStatusPending, paymentStatusReceiptUploaded,
+                  paymentStatusConfirmed, paymentStatusPaid, paymentStatusFailed, paymentStatusRefunded
+                -->
+                <div class="psc-canvas" style="position:relative;">
+                    <canvas id="pscStatusChart"
+                            th:data-pending="         ${paymentStatusPending}"
+                            th:data-receipt-uploaded= "${paymentStatusReceiptUploaded}"
+                            th:data-confirmed=        "${paymentStatusConfirmed}"
+                            th:data-paid=             "${paymentStatusPaid}"
+                            th:data-failed=           "${paymentStatusFailed}"
+                            th:data-refunded=         "${paymentStatusRefunded}">
+                    </canvas>
+                    <div class="psc-donut-center">
+                        <div class="psc-dv" id="pscDonutTotal">—</div>
+                        <div class="psc-dl">Total</div>
+                    </div>
+                </div>
+
+                <div class="psc-legend" id="pscStatusLegend"></div>
+            </div>
+
+            <!-- Card 2 : Revenue by Method — Horizontal bar chart -->
+            <div class="psc-card psc-green">
+                <div class="psc-card-hdr">
+                    <div>
+                        <div class="psc-card-title">Revenue by Method</div>
+                        <div class="psc-card-sub">Card · Bank Transfer </div>
+                    </div>
+                    <span class="psc-badge psc-b-green">Bar</span>
+                </div>
+
+                <!--
+                  AdminController must add: cardRevenue, bankRevenue
+                -->
+                <div class="psc-canvas">
+                    <canvas id="pscMethodChart"
+                            th:data-card="${cardRevenue}"
+                            th:data-bank="${bankRevenue}">
+
+                    </canvas>
+                </div>
+
+                <div class="psc-method-rows">
+                    <div class="psc-method-row">
+                        <span class="psc-ml">💳 Card</span>
+                        <span class="psc-mv">Rs. <span th:text="${#numbers.formatDecimal(cardRevenue,0,'COMMA',0,'POINT')}">0</span></span>
+                    </div>
+                    <div class="psc-method-row">
+                        <span class="psc-ml">🏦 Bank Transfer</span>
+                        <span class="psc-mv">Rs. <span th:text="${#numbers.formatDecimal(bankRevenue,0,'COMMA',0,'POINT')}">0</span></span>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- Card 3 : Monthly Revenue Trend — Line/area chart -->
+            <div class="psc-card psc-purple">
+                <div class="psc-card-hdr">
+                    <div>
+                        <div class="psc-card-title">Monthly Revenue Trend</div>
+                        <div class="psc-card-sub">Last 6 months</div>
+                    </div>
+                    <span class="psc-badge psc-b-purple">Trend</span>
+                </div>
+
+                <!--
+                  AdminController must add:
+                    monthLabels  → JSON array string e.g. ["Jan","Feb","Mar","Apr","May","Jun"]
+                    monthRevenue → JSON array string e.g. [0,12000,45000,0,23000,18000]
+                    monthCount   → JSON array string e.g. [0,3,8,0,5,4]
+                -->
+                <div class="psc-canvas">
+                    <canvas id="pscMonthlyChart"
+                            th:data-labels= "${monthLabels}"
+                            th:data-revenue="${monthRevenue}"
+                            th:data-count=  "${monthCount}">
+                    </canvas>
+                </div>
+
+                <div class="psc-legend">
+                    <div class="psc-legend-item">
+                        <span class="psc-dot" style="background:#2563eb;"></span> Revenue (Rs.)
+                    </div>
+                    <div class="psc-legend-item">
+                        <span class="psc-dot" style="background:#10b981;"></span> No. of Payments
+                    </div>
+                </div>
+            </div>
+
+        </div>
+        <!-- ══════════════════════════════════════════════
+             END PAYMENT SUMMARY CHARTS
+             ══════════════════════════════════════════════ -->
+
+      <!-- Quick Actions -->
+      <div class="grid-2 mb-28">
+        <div class="card">
+          <div class="card-header"><h5><i data-lucide="zap" class="icon-sm"></i> Quick Actions</h5></div>
+          <div class="card-body" style="display:flex; flex-wrap:wrap; gap:10px;">
+            <a href="/admin/services" class="btn btn-outline btn-sm" style="flex:1; min-width:140px; justify-content:center;"><i data-lucide="plus" class="icon-sm"></i> Add Service</a>
+            <a href="/admin/appointments" class="btn btn-outline btn-sm" style="flex:1; min-width:140px; justify-content:center;"><i data-lucide="calendar" class="icon-sm"></i> View Appointments</a>
+            <a href="/admin/jobs" class="btn btn-outline btn-sm" style="flex:1; min-width:140px; justify-content:center;"><i data-lucide="hammer" class="icon-sm"></i> Assign Jobs</a>
+            <a href="/admin/leave-requests" class="btn btn-outline btn-sm" style="flex:1; min-width:140px; justify-content:center;"><i data-lucide="umbrella" class="icon-sm"></i> Review Leaves</a>
+            <a href="/admin/support-tickets" class="btn btn-outline btn-sm" style="flex:1; min-width:140px; justify-content:center;"><i data-lucide="ticket" class="icon-sm"></i> Support Tickets</a>
+            <a href="/admin/users" class="btn btn-outline btn-sm" style="flex:1; min-width:140px; justify-content:center;"><i data-lucide="users" class="icon-sm"></i> Manage Users</a>
+          </div>
+        </div>
+
+        <div class="card">
+          <div class="card-header"><h5>📈 System Summary</h5></div>
+          <div class="card-body">
+            <div style="display:flex; flex-direction:column; gap:12px;">
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--body-bg); border-radius:9px;">
+                <span style="font-size:13px; color:var(--text-muted)">Pending Leave Requests</span>
+                <span class="badge badge-warning" th:text="${pendingLeaves}">0</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--body-bg); border-radius:9px;">
+                <span style="font-size:13px; color:var(--text-muted)">Received Support Tickets</span>
+                <span class="badge badge-danger" th:text="${openTickets}">0</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--body-bg); border-radius:9px;">
+                <span style="font-size:13px; color:var(--text-muted)">Completed Jobs</span>
+                <span class="badge badge-success" th:text="${completedJobs}">0</span>
+              </div>
+              <div style="display:flex; justify-content:space-between; align-items:center; padding:10px 14px; background:var(--body-bg); border-radius:9px;">
+                <span style="font-size:13px; color:var(--text-muted)">Total Revenue</span>
+                <span class="badge badge-purple">Rs. <span th:text="${#numbers.formatDecimal(totalRevenue,0,'COMMA',0,'POINT')}">0</span></span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Recent Appointments -->
+      <div class="card">
+        <div class="card-header">
+          <h5><i data-lucide="clipboard-list" class="icon-sm"></i> Recent Appointments</h5>
+          <a href="/admin/appointments" class="btn btn-sm btn-outline">View All →</a>
+        </div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead>
+              <tr><th>#ID</th><th>Customer</th><th>Service</th><th>Date</th><th>Time</th><th>Status</th><th>Action</th></tr>
+            </thead>
+            <tbody>
+            <tr th:if="${#lists.isEmpty(recentAppointments)}">
+                <td colspan="7" style="text-align:center; padding:32px; color:var(--text-muted)">No appointments yet</td>
+              </tr>
+              <tr th:each="apt : ${recentAppointments}">
+                <td><strong>#<span th:text="${apt.id}">1</span></strong></td>
+                <td th:text="${apt.customer?.fullName}">Customer</td>
+                <td th:text="${apt.service?.name}">Service</td>
+                <td th:text="${apt.appointmentDate}">Date</td>
+                <td th:text="${apt.appointmentTime}">Time</td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${apt.status.name()=='PENDING'} ? 'badge-warning' :
+                                        (${apt.status.name()=='CONFIRMED'} ? 'badge-info' :
+                                        (${apt.status.name()=='COMPLETED'} ? 'badge-success' :
+                                        (${apt.status.name()=='CANCELLED'} ? 'badge-danger' : 'badge-secondary')))"
+                        th:text="${apt.status}">PENDING</span>
+                </td>
+                <td>
+                  <form th:action="@{/admin/appointments/{id}/status(id=${apt.id})}" method="post">
+                    <select name="status" onchange="this.form.submit()"
+                            style="padding:5px 8px; border-radius:6px; border:1px solid var(--border); font-size:12px; cursor:pointer;">
+                        <option th:each="s : ${T(java.util.List).of('PENDING','CONFORMED','IN_PROGRESS','COMPLETED','CANCELLED')}"
+                              th:value="${s}" th:text="${s}"
+                              th:selected="${apt.status.name() == s}"></option>
+                    </select>
+                  </form>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    lucide.createIcons();
+  });
+</script>
+<script th:src="@{/js/main.js}"></script>
+</body>
+</html>

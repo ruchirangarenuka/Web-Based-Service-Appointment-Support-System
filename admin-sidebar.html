@@ -1,0 +1,72 @@
+<aside class="sidebar" th:fragment="adminSidebar(activeMenu)"
+  style="background: linear-gradient(180deg, #1e2d42 0%, #151f2e 100%);" xmlns:th="http://www.thymeleaf.org">
+  <div class="sidebar-brand" style="border-bottom-color:rgba(255,255,255,0.06)">
+    <div class="sidebar-brand-icon" style="background:rgba(220,53,69,0.2)"><i data-lucide="shield"
+        class="icon-sm"></i></div>
+    <div class="sidebar-brand-text">
+      <h3>Admin Panel</h3>
+      <span>Fixora</span>
+    </div>
+  </div>
+
+  <nav class="sidebar-nav">
+    <div class="nav-section-label">Overview</div>
+    <a href="/admin/dashboard" class="nav-item" th:classappend="${activeMenu=='dashboard'} ? 'active' : ''">
+      <span class="nav-icon"><i data-lucide="bar-chart-2" class="icon-sm"></i></span> Dashboard
+    </a>
+
+    <div class="nav-section-label">Management</div>
+    <a href="/admin/users" class="nav-item" th:classappend="${activeMenu=='users'} ? 'active' : ''">
+      <span class="nav-icon"><i data-lucide="users" class="icon-sm"></i></span> Users
+    </a>
+    <a href="/admin/services" class="nav-item" th:classappend="${activeMenu=='services'} ? 'active' : ''">
+      <span class="nav-icon"><i data-lucide="wrench" class="icon-sm"></i></span> Services
+    </a>
+    <a href="/admin/appointments" class="nav-item" th:classappend="${activeMenu=='appointments'} ? 'active' : ''">
+      <span class="nav-icon"><i data-lucide="calendar" class="icon-sm"></i></span> Appointments
+    </a>
+    <a href="/admin/jobs" class="nav-item" th:classappend="${activeMenu=='jobs'} ? 'active' : ''">
+      <span class="nav-icon"><i data-lucide="hammer" class="icon-sm"></i></span> Jobs
+    </a>
+    <a href="/admin/jobs/history" class="nav-item" th:classappend="${activeMenu=='job-history'} ? 'active' : ''">
+      <span class="nav-icon"><i data-lucide="history" class="icon-sm"></i></span> Job History
+    </a>
+
+    <div class="nav-section-label">Finance</div>
+    <a href="/admin/payments" class="nav-item" th:classappend="${activeMenu=='payments'} ? 'active' : ''">
+      <span class="nav-icon"><i data-lucide="credit-card" class="icon-sm"></i></span> Payments
+    </a>
+    <a href="/admin/refunds" class="nav-item" th:classappend="${activeMenu=='refunds'} ? 'active' : ''">
+      <span class="nav-icon"><i data-lucide="undo-2" class="icon-sm"></i></span> Refunds
+    </a>
+
+    <div class="nav-section-label">HR &amp; Support</div>
+    <a href="/admin/leave-requests" class="nav-item" th:classappend="${activeMenu=='leaves'} ? 'active' : ''">
+      <span class="nav-icon"><i data-lucide="umbrella" class="icon-sm"></i></span> Leave Requests
+    </a>
+    <a href="/admin/support-tickets" class="nav-item" th:classappend="${activeMenu=='tickets'} ? 'active' : ''">
+      <span class="nav-icon"><i data-lucide="ticket" class="icon-sm"></i></span> Support Tickets
+    </a>
+    <a href="/admin/feedback" class="nav-item" th:classappend="${activeMenu=='feedback'} ? 'active' : ''">
+      <span class="nav-icon"><i data-lucide="message-square" class="icon-sm"></i></span> Customer Feedback
+    </a>
+    <a href="/admin/sms-logs" class="nav-item" th:classappend="${activeMenu=='sms-logs'} ? 'active' : ''">
+      <span class="nav-icon"><i data-lucide="smartphone" class="icon-sm"></i></span> SMS History
+    </a>
+  </nav>
+
+  <div class="sidebar-footer">
+    <div class="sidebar-user">
+      <div class="sidebar-avatar" style="background:linear-gradient(135deg,#c0392b,#e74c3c)"
+        th:text="${currentUser?.fullName?.substring(0,1)?.toUpperCase()}">A</div>
+      <div class="sidebar-user-info">
+        <div class="name" th:text="${currentUser?.fullName}">Admin</div>
+        <div class="role"
+          style="color:#ff6b7a; font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px;"><i
+            data-lucide="shield" class="icon-sm"></i> Administrator</div>
+      </div>
+      <a href="/admin/logout" class="sidebar-logout" title="Logout"><i data-lucide="door-open"
+          class="icon-sm"></i></a>
+    </div>
+  </div>
+</aside>

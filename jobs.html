@@ -1,0 +1,108 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Jobs — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}"/>
+  <style>.sidebar{background:linear-gradient(180deg,#1e2d42 0%,#151f2e 100%)}</style>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/admin-sidebar :: adminSidebar('jobs')}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left"><h4><i data-lucide="hammer" class="icon-sm"></i> Job Management</h4><p>Assign staff and track job progress</p></div>
+      <div class="topbar-right">
+        <div class="topbar-avatar" style="background:linear-gradient(135deg,#c0392b,#e74c3c)"
+             th:text="${currentUser?.fullName?.substring(0,1)?.toUpperCase()}">A</div>
+      </div>
+    </div>
+    <div class="page-body">
+      <div th:if="${success}" class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> <span th:text="${success}"></span></div>
+
+      <!-- Summary stats -->
+      <div class="stats-grid mb-28" style="grid-template-columns:repeat(3,1fr)">
+        <div class="stat-card">
+          <div class="stat-icon yellow"><i data-lucide="hourglass" class="icon-sm"></i></div>
+          <div class="stat-info">
+            <div class="value" th:text="${jobs.?[status.name() == 'PENDING'].size()}">0</div>
+            <div class="label">Pending</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue"><i data-lucide="hammer" class="icon-sm"></i></div>
+          <div class="stat-info">
+            <div class="value" th:text="${jobs.?[status.name() == 'IN_PROGRESS'].size()}">0</div>
+            <div class="label">In Progress</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green"><i data-lucide="check-circle" class="icon-sm"></i></div>
+          <div class="stat-info">
+            <div class="value" th:text="${jobs.?[status.name() == 'COMPLETED'].size()}">0</div>
+            <div class="label">Completed</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h5>All Jobs (<span th:text="${jobs.size()}">0</span>)</h5></div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th>#</th><th>Appointment</th><th>Customer</th><th>Service</th><th>Date</th><th>Assigned Staff</th><th>Status</th><th>Assign Staff</th></tr></thead>
+            <tbody>
+              <tr th:if="${jobs.empty}">
+                <td colspan="8"><div class="empty-state"><div class="empty-icon"><i data-lucide="hammer" class="icon-sm"></i></div><h4>No jobs yet</h4><p>Jobs are auto-created when appointments are booked</p></div></td>
+              </tr>
+              <tr th:each="job : ${jobs}">
+                <td><strong>#<span th:text="${job.id}">1</span></strong></td>
+                <td><a th:href="@{/admin/appointments}" style="color:var(--primary)">#<span th:text="${job.appointment?.id}">1</span></a></td>
+                <td th:text="${job.appointment?.customer?.fullName}">Customer</td>
+                <td th:text="${job.appointment?.service?.name}">Service</td>
+                <td>
+                  <div th:text="${job.appointment?.appointmentDate}">Date</div>
+                  <div class="text-sm text-muted" th:text="${job.appointment?.appointmentTime}">Time</div>
+                </td>
+                <td>
+                  <span th:if="${job.assignedStaff != null}" class="fw-600" th:text="${job.assignedStaff.fullName}">Staff</span>
+                  <span th:if="${job.assignedStaff == null}" class="badge badge-secondary">Unassigned</span>
+                </td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${job.status.name()=='PENDING'} ? 'badge-warning' :
+                                        (${job.status.name()=='ASSIGNED'} ? 'badge-info' :
+                                        (${job.status.name()=='IN_PROGRESS'} ? 'badge-primary' :
+                                        (${job.status.name()=='COMPLETED'} ? 'badge-success' : 'badge-danger')))"
+                        th:text="${job.status}">PENDING</span>
+                </td>
+                <td>
+                  <form th:action="@{/admin/jobs/{id}/assign(id=${job.id})}" method="post"
+                        style="display:flex;gap:6px;align-items:center;min-width:180px">
+                    <select name="staffId" style="padding:6px 8px;border-radius:7px;border:1px solid var(--border);font-size:12px;flex:1;">
+                      <option value="">-- Select Staff --</option>
+                      <option th:each="staff : ${staffList}"
+                              th:if="${staff.serviceType == job.appointment?.service?.name}"
+                              th:value="${staff.id}" th:text="${staff.fullName}"
+                              th:selected="${job.assignedStaff?.id == staff.id}">Staff</option>
+                    </select>
+                    <button class="btn btn-sm btn-primary" style="width:auto;flex-shrink:0">Assign</button>
+                  </form>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script th:src="@{/js/main.js}"></script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    lucide.createIcons();
+  });
+</script>
+</body>
+</html>

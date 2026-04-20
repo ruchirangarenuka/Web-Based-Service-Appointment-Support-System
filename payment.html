@@ -1,0 +1,268 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>My Payments — Staff</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}"/>
+    <style>
+        .salary-badge {
+            display: inline-block;
+            background: #d1fae5;
+            color: #065f46;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+        .pending-badge {
+            display: inline-block;
+            background: #fef3c7;
+            color: #92400e;
+            font-size: 12px;
+            font-weight: 700;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+        .no-payment-badge {
+            display: inline-block;
+            background: #f1f5f9;
+            color: #64748b;
+            font-size: 12px;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 6px;
+        }
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div th:replace="~{fragments/staff-sidebar :: staffSidebar('payment')}"></div>
+
+    <div class="main-content">
+        <div class="topbar">
+            <div class="topbar-left">
+                <h4><i data-lucide="banknote" class="icon-sm"></i> My Payments</h4>
+                <p>View payments made by customers for your assigned services</p>
+            </div>
+            <div class="topbar-right">
+                <div class="topbar-avatar" style="background:linear-gradient(135deg,#28a745,#20c997)"
+                     th:text="${currentUser?.fullName?.substring(0,1)?.toUpperCase()}">S</div>
+            </div>
+        </div>
+
+        <div class="page-body">
+
+            <!-- ── KPI Stat Cards ──────────────────────────────────────────── -->
+            <div class="stats-grid mb-28">
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#d4edda;color:#28a745;">
+                        <i data-lucide="hammer" class="icon-sm"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="value" th:text="${jobs.size()}">0</div>
+                        <div class="label">Total Jobs</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#d1fae5;color:#065f46;">
+                        <i data-lucide="check-circle" class="icon-sm"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="value" th:text="${paidPaymentsCount}">0</div>
+                        <div class="label">Paid Payments</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon" style="background:#d1fae5;color:#065f46;">
+                        <i data-lucide="banknote" class="icon-sm"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="value" style="font-size:18px;">
+                            Rs.<span th:text="${#numbers.formatDecimal(totalSalary,0,'COMMA',0,'POINT')}">0</span>
+                        </div>
+                        <div class="label">Total Earned</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon yellow">
+                        <i data-lucide="calendar" class="icon-sm"></i>
+                    </div>
+                    <div class="stat-info">
+                        <div class="value" style="font-size:18px;">
+                            Rs.<span th:text="${#numbers.formatDecimal(monthlySalary,0,'COMMA',0,'POINT')}">0</span>
+                        </div>
+                        <div class="label">This Month</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Salary Summary Banner ───────────────────────────────────── -->
+            <div style="background:linear-gradient(135deg,#065f46 0%,#10b981 100%); border-radius:16px; padding:24px 28px; color:#fff; margin-bottom:24px; box-shadow:0 4px 20px rgba(16,185,129,0.25);">
+                <div style="font-size:11px; font-weight:700; letter-spacing:1px; text-transform:uppercase; color:rgba(255,255,255,0.6); margin-bottom:18px; display:flex; align-items:center; gap:7px;">
+                    <i data-lucide="wallet" class="icon-sm"></i> Salary Overview
+                </div>
+                <div style="display:grid; grid-template-columns:repeat(4,1fr); gap:0;">
+                    <div style="padding:0 24px 0 0; border-right:1px solid rgba(255,255,255,0.15);">
+                        <div style="font-size:11.5px; color:rgba(255,255,255,0.55); margin-bottom:6px;">💰 Total Earned</div>
+                        <div style="font-size:26px; font-weight:800; line-height:1;">
+                            Rs. <span th:text="${#numbers.formatDecimal(totalSalary,0,'COMMA',2,'POINT')}">0.00</span>
+                        </div>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-top:4px;">From all paid payments</div>
+                    </div>
+                    <div style="padding:0 24px; border-right:1px solid rgba(255,255,255,0.15);">
+                        <div style="font-size:11.5px; color:rgba(255,255,255,0.55); margin-bottom:6px;">📅 This Month</div>
+                        <div style="font-size:26px; font-weight:800; line-height:1; color:#ffffff;">
+                            Rs. <span th:text="${#numbers.formatDecimal(monthlySalary,0,'COMMA',2,'POINT')}">0.00</span>
+                        </div>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-top:4px;">Current month earnings</div>
+                    </div>
+                    <div style="padding:0 0 0 24px; border-left:1px solid rgba(255,255,255,0.15);">
+                        <div style="font-size:11.5px; color:rgba(255,255,255,0.55); margin-bottom:6px;">🏢 Platform Fee</div>
+                        <div style="font-size:26px; font-weight:800; line-height:1; color:#ffffff;">10%</div>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-top:4px;">Deducted by admin</div>
+                    </div>
+                    <div style="padding:0 0 0 24px;">
+                        <div style="font-size:11.5px; color:rgba(255,255,255,0.55); margin-bottom:6px;">✅ Paid Payments</div>
+                        <div style="font-size:26px; font-weight:800; line-height:1;" th:text="${paidPaymentsCount}">0</div>
+                        <div style="font-size:11px; color:rgba(255,255,255,0.45); margin-top:4px;">Confirmed by admin</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── Payment Details Table ───────────────────────────────────── -->
+            <div class="card">
+                <div class="card-header">
+                    <h5><i data-lucide="banknote" class="icon-sm"></i> Payment Details — Per Service</h5>
+                </div>
+                <div class="table-wrap">
+                    <table class="tbl">
+                        <thead>
+                        <tr>
+                            <th>#Job</th>
+                            <th>Customer</th>
+                            <th>Service</th>
+                            <th>Appointment Date</th>
+                            <th>Payment Method</th>
+                            <th>Payment Status</th>
+                            <th>Job Status</th>
+                            <th>Amount</th>
+                        </tr>
+                        </thead>
+                        <tbody>
+
+                        <!-- Empty state -->
+                        <tr th:if="${#lists.isEmpty(jobs)}">
+                            <td colspan="8">
+                                <div class="empty-state">
+                                    <div class="empty-icon">💰</div>
+                                    <h4>No payments yet</h4>
+                                    <p>Payments will appear here once customers pay for your services</p>
+                                </div>
+                            </td>
+                        </tr>
+
+                        <!--
+                            Loop through jobs.
+                            For each job we find its matching payment from staffPayments list
+                            by matching appointment id.
+                        -->
+                        <tr th:each="job : ${jobs}">
+                            <td><strong>#<span th:text="${job.id}">1</span></strong></td>
+
+                            <!-- Customer -->
+                            <td>
+                                <div class="fw-600" th:text="${job.appointment?.customer?.fullName}">Customer</div>
+                                <div class="text-sm text-muted" th:text="${job.appointment?.customer?.email}">email</div>
+                            </td>
+
+                            <!-- Service -->
+                            <td>
+                                <div class="fw-600" th:text="${job.appointment?.service?.name}">Service</div>
+                                <div class="text-sm text-muted">
+                                    Rs. <span th:text="${#numbers.formatDecimal(job.appointment?.service?.price,0,'COMMA',2,'POINT')}">0.00</span>
+                                </div>
+                            </td>
+
+                            <!-- Appointment Date -->
+                            <td>
+                                <div th:text="${job.appointment?.appointmentDate}">Date</div>
+                                <div class="text-sm text-muted" th:text="${job.appointment?.appointmentTime}">Time</div>
+                            </td>
+
+                            <!--
+                                Payment Method — loop through staffPayments and find
+                                the one whose appointment id matches this job's appointment id
+                            -->
+                            <td>
+                                <span th:each="pay : ${staffPayments}"
+                                      th:if="${pay.appointment?.id == job.appointment?.id}">
+                                    <span class="badge"
+                                          th:classappend="${pay.method?.name()=='CARD'} ? 'badge-info' :
+                                                          (${pay.method?.name()=='CASH'} ? 'badge-success' : 'badge-primary')"
+                                          th:text="${pay.method?.name()=='CARD'} ? '💳 Card' :
+                                                   (${pay.method?.name()=='CASH'} ? '💵 Cash' : '🏦 Bank Transfer')">
+                                        Method
+                                    </span>
+                                </span>
+                                <span th:if="${#lists.isEmpty(staffPayments)}" class="no-payment-badge">—</span>
+                            </td>
+
+                            <!-- Payment Status -->
+                            <td>
+                                <span th:each="pay : ${staffPayments}"
+                                      th:if="${pay.appointment?.id == job.appointment?.id}">
+                                    <span class="badge"
+                                          th:classappend="${pay.status?.name()=='PAID'} ? 'badge-success' :
+                                                          (${pay.status?.name()=='RECEIPT_UPLOADED'} ? 'badge-warning' :
+                                                          (${pay.status?.name()=='FAILED'} ? 'badge-danger' :
+                                                          (${pay.status?.name()=='CONFIRMED'} ? 'badge-info' : 'badge-secondary')))"
+                                          th:text="${pay.status}">
+                                        Status
+                                    </span>
+                                </span>
+                                <span class="no-payment-badge">No Payment Yet</span>
+                            </td>
+
+                            <!-- Job Status -->
+                            <td>
+                                <span class="badge"
+                                      th:classappend="${job.status.name()=='COMPLETED'} ? 'badge-success' :
+                                                      (${job.status.name()=='IN_PROGRESS'} ? 'badge-primary' :
+                                                      (${job.status.name()=='ASSIGNED'} ? 'badge-info' : 'badge-warning'))"
+                                      th:text="${job.status}">Status</span>
+                            </td>
+
+                            <!-- Amount -->
+                            <td>
+                                <span th:each="pay : ${staffPayments}"
+                                      th:if="${pay.appointment?.id == job.appointment?.id}">
+                                    <!-- Green if PAID -->
+                                    <span th:if="${pay.status?.name()=='PAID'}" class="salary-badge">
+                                        Rs. <span th:text="${#numbers.formatDecimal(pay.amount * 0.90, 0, 'COMMA', 2, 'POINT')}">0.00</span>
+                                </span>
+                                    <!-- Yellow if waiting (PENDING, RECEIPT_UPLOADED) -->
+                                    <span th:if="${pay.status?.name()!='PAID'}" class="pending-badge"
+                                          th:text="${pay.status}">Pending</span>
+                                </span>
+                                <span class="no-payment-badge">—</span>
+                            </td>
+
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+        </div><!-- /page-body -->
+    </div><!-- /main-content -->
+</div><!-- /app-layout -->
+
+<script th:src="@{/js/main.js}"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        lucide.createIcons();
+    });
+</script>
+</body>
+</html>

@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Invoice — Admin View</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}"/>
+  <style>
+    .sidebar { background: linear-gradient(180deg,#1e2d42 0%,#151f2e 100%); }
+    body { background: #eef2f9; }
+    .inv-wrap { max-width: 720px; margin: 24px auto; padding: 0 20px 40px; }
+    .inv-actions { display:flex; gap:12px; margin-bottom:18px; flex-wrap:wrap; }
+    .inv-paper { background:#fff; border-radius:18px; box-shadow:0 8px 28px rgba(61,90,138,0.12); overflow:hidden; }
+    .inv-hdr { background:linear-gradient(135deg,#1e2d42,#151f2e); padding:28px 36px; color:#fff; display:flex; justify-content:space-between; align-items:flex-start; }
+    .inv-hdr .brand { font-size:22px; font-weight:900; }
+    .inv-hdr .brand-sub { font-size:12px; opacity:.6; margin-top:3px; }
+    .inv-hdr .badge-area { text-align:right; }
+    .inv-hdr .badge-area h2 { font-size:26px; font-weight:900; opacity:.9; letter-spacing:2px; }
+    .inv-hdr .badge-area .no { font-size:12px; opacity:.6; margin-top:3px; }
+    .status-bar { padding:12px 36px; font-size:13.5px; font-weight:600; display:flex; gap:8px; align-items:center; }
+    .status-bar.paid { background:#d4edda; color:#155724; }
+    .status-bar.pending { background:#fff3cd; color:#856404; }
+    .status-bar.uploaded { background:#d1ecf1; color:#0c5460; }
+    .status-bar.failed  { background:#f8d7da; color:#721c24; }
+    .inv-body { padding:28px 36px; }
+    .inv-meta { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin-bottom:24px; }
+    .inv-meta-box { background:var(--body-bg); border-radius:10px; padding:12px; }
+    .inv-meta-box .lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-muted); margin-bottom:3px; }
+    .inv-meta-box .val { font-size:13px; font-weight:700; }
+    .inv-parties { display:grid; grid-template-columns:1fr 1fr; gap:24px; margin-bottom:24px; }
+    .party-lbl { font-size:10px; font-weight:700; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-muted); margin-bottom:7px; }
+    table.inv-t { width:100%; border-collapse:collapse; margin-bottom:18px; }
+    table.inv-t thead { background:linear-gradient(135deg,#1e2d42,#2c3e5a); color:#fff; }
+    table.inv-t thead th { padding:10px 13px; font-size:11.5px; font-weight:700; text-align:left; text-transform:uppercase; }
+    table.inv-t tbody td { padding:13px; border-bottom:1px solid var(--border); font-size:13.5px; }
+    .totals { display:flex; justify-content:flex-end; margin-bottom:24px; }
+    .totals-box { width:250px; }
+    .tot-row { display:flex; justify-content:space-between; padding:7px 0; font-size:13.5px; border-bottom:1px solid var(--border); }
+    .tot-row.total { border-bottom:none; font-size:16px; font-weight:800; color:var(--primary); padding-top:10px; }
+    .receipt-sec { background:var(--body-bg); border-radius:12px; padding:16px; margin-bottom:22px; }
+    .receipt-sec h5 { font-size:13px; font-weight:700; margin-bottom:10px; }
+    .receipt-sec img { max-width:100%; border-radius:8px; border:1px solid var(--border); max-height:260px; object-fit:contain; }
+    .inv-note { border-top:2px dashed var(--border); padding-top:16px; font-size:12px; color:var(--text-muted); line-height:1.7; }
+    @media print { body{background:#fff;} .inv-actions{display:none;} .inv-wrap{max-width:100%;margin:0;padding:0;} .inv-paper{box-shadow:none;border-radius:0;} }
+  </style>
+</head>
+<body>
+<!-- No sidebar on invoice view for clean print -->
+<div class="inv-wrap">
+  <div class="inv-actions">
+    <a href="/admin/payments" class="btn btn-secondary" style="width:auto;background:#d4edda">← Back to Payments</a>
+    <button onclick="window.print()" class="btn btn-outline" style="width:auto;background:#d4edda"><i data-lucide="printer" class="icon-sm"></i> Print</button>
+    <form th:if="${payment.status.name()=='RECEIPT_UPLOADED'}"
+          th:action="@{/admin/payments/{id}/confirm(id=${payment.id})}" method="post" style="display:inline">
+      <button class="btn btn-success" style="width:auto"><i data-lucide="check-circle" class="icon-sm"></i> Confirm Payment</button>
+    </form>
+    <form th:if="${payment.status.name()=='RECEIPT_UPLOADED'}"
+          th:action="@{/admin/payments/{id}/reject(id=${payment.id})}" method="post" style="display:inline">
+      <input type="hidden" name="reason" value="Receipt rejected"/>
+      <button class="btn btn-danger" style="width:auto"><i data-lucide="x" class="icon-sm"></i> Reject Receipt</button>
+    </form>
+  </div>
+
+  <div class="inv-paper">
+    <div class="inv-hdr">
+      <div>
+        <div class="brand"><i data-lucide="wrench" class="icon-sm"></i> Fixora</div>
+        <div class="brand-sub">Fixora</div>
+      </div>
+      <div class="badge-area">
+        <h2>INVOICE</h2>
+        <div class="no" th:text="${payment.invoiceNumber != null ? payment.invoiceNumber : 'INV-' + payment.id}">INV-001</div>
+      </div>
+    </div>
+
+    <div class="status-bar"
+         th:classappend="${payment.status.name()=='PAID'} ? 'paid' :
+                         (${payment.status.name()=='RECEIPT_UPLOADED'} ? 'uploaded' :
+                         (${payment.status.name()=='FAILED'} ? 'failed' : 'pending'))"
+         th:utext="${payment.status.name()=='PAID'} ? '<i data-lucide=&quot;check-circle&quot; class=&quot;icon-sm&quot;></i> PAID — Confirmed by Admin' :
+                  (${payment.status.name()=='RECEIPT_UPLOADED'} ? '<i data-lucide=&quot;hourglass&quot; class=&quot;icon-sm&quot;></i> Receipt Uploaded — Awaiting Confirmation' :
+                  (${payment.status.name()=='FAILED'} ? '<i data-lucide=&quot;x&quot; class=&quot;icon-sm&quot;></i> Payment Failed / Receipt Rejected' :
+                  '⚠ Payment Pending'))">Status</div>
+
+    <div class="inv-body">
+      <div class="inv-parties">
+        <div>
+          <div class="party-lbl">Billed To</div>
+          <div style="font-weight:700;font-size:14px" th:text="${payment.customer?.fullName}">Customer</div>
+          <div style="font-size:13px;color:var(--text-muted)" th:text="${payment.customer?.email}">email</div>
+          <div style="font-size:13px;color:var(--text-muted)" th:text="${payment.customer?.phone ?: ''}">phone</div>
+        </div>
+        <div>
+          <div class="party-lbl">From</div>
+          <div style="font-weight:700;font-size:14px">Fixora Ltd.</div>
+          <div style="font-size:13px;color:var(--text-muted)">Colombo, Sri Lanka</div>
+          <div style="font-size:13px;color:var(--text-muted)">support@fixora.lk</div>
+        </div>
+      </div>
+
+      <div class="inv-meta">
+        <div class="inv-meta-box">
+          <div class="lbl">Invoice No.</div>
+          <div class="val" th:text="${payment.invoiceNumber != null ? payment.invoiceNumber : 'INV-' + payment.id}">INV</div>
+        </div>
+        <div class="inv-meta-box">
+          <div class="lbl">Transaction ID</div>
+          <div class="val" style="font-family:monospace;font-size:11.5px" th:text="${payment.transactionId}">TXN</div>
+        </div>
+        <div class="inv-meta-box">
+          <div class="lbl">Method</div>
+          <div class="val" th:utext="${payment.method.name()=='CARD'} ? '<i data-lucide=&quot;credit-card&quot; class=&quot;icon-sm&quot;></i> Card' : '🏦 Bank Transfer'">Method</div>
+        </div>
+        <div class="inv-meta-box">
+          <div class="lbl">Date Issued</div>
+          <div class="val" th:text="${#temporals.format(payment.createdAt,'dd MMM yyyy')}">Date</div>
+        </div>
+        <div class="inv-meta-box">
+          <div class="lbl">Appt. Date</div>
+          <div class="val" th:text="${payment.appointment?.appointmentDate}">Date</div>
+        </div>
+        <div class="inv-meta-box">
+          <div class="lbl">Admin Verified</div>
+          <div class="val" th:utext="${payment.adminConfirmed} ? '<i data-lucide=&quot;check-circle&quot; class=&quot;icon-sm&quot;></i> Yes' : '<i data-lucide=&quot;hourglass&quot; class=&quot;icon-sm&quot;></i> Pending'">Status</div>
+        </div>
+      </div>
+
+      <table class="inv-t">
+        <thead><tr><th>Description</th><th>Category</th><th>Duration</th><th style="text-align:right">Amount</th></tr></thead>
+        <tbody>
+          <tr>
+            <td>
+              <div style="font-weight:700" th:text="${payment.appointment?.service?.name}">Service</div>
+              <div style="font-size:12px;color:var(--text-muted)" th:text="${payment.appointment?.service?.description}">Desc</div>
+            </td>
+            <td th:text="${payment.appointment?.service?.category ?: '—'}">Cat</td>
+            <td th:text="${payment.appointment?.service?.formattedDuration != null ? payment.appointment.service.formattedDuration : '—'}">60 min</td>
+            <td style="text-align:right;font-weight:700">Rs. <span th:text="${#numbers.formatDecimal(payment.amount,0,'COMMA',2,'POINT')}">0</span></td>
+          </tr>
+        </tbody>
+      </table>
+
+      <div class="totals">
+        <div class="totals-box">
+          <div class="tot-row"><span>Subtotal</span><span>Rs. <span th:text="${#numbers.formatDecimal(payment.amount,0,'COMMA',2,'POINT')}">0</span></span></div>
+          <div class="tot-row"><span>Tax</span><span>10%</span></div>
+          <div class="tot-row total"><span>TOTAL</span><span>Rs. <span th:text="${#numbers.formatDecimal(payment.amount,0,'COMMA',2,'POINT')}">0</span></span></div>
+        </div>
+      </div>
+
+      <div th:if="${payment.receiptImagePath != null}" class="receipt-sec">
+        <h5>📄 Bank Transfer Receipt</h5>
+        <img th:src="@{/admin/payments/receipt/{f}(f=${payment.receiptImagePath})}" alt="Receipt"/>
+        <div style="margin-top:10px;font-size:12.5px"
+             th:utext="${payment.adminConfirmed} ? '<i data-lucide=&quot;check-circle&quot; class=&quot;icon-sm&quot;></i> Confirmed by admin' : '<i data-lucide=&quot;hourglass&quot; class=&quot;icon-sm&quot;></i> Pending verification'"
+             th:style="${payment.adminConfirmed} ? 'color:#28a745' : 'color:#856404'">Status</div>
+      </div>
+
+      <div class="inv-note">
+        <strong>Thank you for choosing Fixora!</strong><br>
+        Admin reference — Generated on <span th:text="${#temporals.format(payment.createdAt,'dd MMM yyyy HH:mm')}">date</span>.<br>
+        This is a system-generated invoice.
+      </div>
+    </div>
+  </div>
+</div>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    lucide.createIcons();
+  });
+</script>
+</body>
+</html>

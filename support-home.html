@@ -1,0 +1,155 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Support Home</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}"/>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/customer-sidebar :: customerSidebar('support')}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h4><i data-lucide="life-buoy" class="icon-sm"></i> Support Center</h4>
+        <p>How can we help you today?</p>
+      </div>
+    </div>
+    <div class="page-body">
+      <div class="welcome-banner mb-28" style="background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%); color: white; border-radius: 16px; padding: 40px;">
+        <h2 style="font-size: 28px; margin-bottom: 12px;">Welcome to the Support Center</h2>
+        <p style="font-size: 16px; opacity: 0.9;">Choose an option below to get started. We're here to help.</p>
+      </div>
+
+      <div class="stats-grid" style="grid-template-columns: repeat(3, 1fr); gap: 24px;">
+        <!-- Create Ticket Card -->
+        <a href="#" onclick="openModal('newTicketModal')" style="text-decoration: none; color: inherit;">
+          <div class="stat-card" style="padding: 30px; text-align: center; border: 1px solid var(--border); transition: all 0.3s ease; height: 100%;">
+            <div class="stat-icon" style="margin: 0 auto 16px auto; width: 60px; height: 60px; font-size: 30px; background: #e0f2fe; color: #0284c7;">
+              <i data-lucide="plus-circle" style="width: 32px; height: 32px;"></i>
+            </div>
+            <h3 style="margin-bottom: 8px; font-size: 18px;">Create a New Ticket</h3>
+            <p style="color: var(--text-muted); font-size: 14px;">Raise a new issue, request, or emergency and our team will get back to you shortly.</p>
+          </div>
+        </a>
+
+        <!-- View Tickets Card -->
+        <a href="/customer/support/tickets" style="text-decoration: none; color: inherit;">
+          <div class="stat-card" style="padding: 30px; text-align: center; border: 1px solid var(--border); transition: all 0.3s ease; height: 100%;">
+            <div class="stat-icon" style="margin: 0 auto 16px auto; width: 60px; height: 60px; font-size: 30px; background: #fdf4ff; color: #c026d3;">
+              <i data-lucide="list" style="width: 32px; height: 32px;"></i>
+            </div>
+            <h3 style="margin-bottom: 8px; font-size: 18px;">View My Tickets</h3>
+            <p style="color: var(--text-muted); font-size: 14px;">Check the status of your existing issues, or reply to our support team.</p>
+          </div>
+        </a>
+
+        <!-- Search Tickets Card -->
+        <a href="#" onclick="openModal('searchTicketModal')" style="text-decoration: none; color: inherit;">
+          <div class="stat-card" style="padding: 30px; text-align: center; border: 1px solid var(--border); transition: all 0.3s ease; height: 100%;">
+            <div class="stat-icon" style="margin: 0 auto 16px auto; width: 60px; height: 60px; font-size: 30px; background: #ecfdf5; color: #10b981;">
+              <i data-lucide="search" style="width: 32px; height: 32px;"></i>
+            </div>
+            <h3 style="margin-bottom: 8px; font-size: 18px;">Search My Tickets</h3>
+            <p style="color: var(--text-muted); font-size: 14px;">Find a specific support ticket by its subject or customer name.</p>
+          </div>
+        </a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Reusing the Modal from support.html so they can create a ticket right from the home page -->
+<div class="modal-overlay" id="newTicketModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h5><i data-lucide="ticket" class="icon-sm"></i> New Support Ticket</h5>
+      <button class="modal-close" onclick="closeModal('newTicketModal')">×</button>
+    </div>
+    <form th:action="@{/customer/support/create}" method="post" enctype="multipart/form-data">
+      <div class="modal-body">
+        <div class="form-group" style="display:flex; gap:16px;">
+          <div style="flex:1;">
+            <label class="form-label">Customer Name</label>
+            <input type="text" name="customerName" class="form-control no-icon" placeholder="Your full name" required/>
+          </div>
+          <div style="flex:1;">
+            <label class="form-label">Customer ID Number</label>
+            <input type="text" name="customerIdNumber" class="form-control no-icon" placeholder="e.g. 123456789V" required/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Subject</label>
+          <input type="text" name="subject" class="form-control no-icon" placeholder="Brief subject..." pattern="^[^0-9]*$" title="Cannot use numbers in subject" oninvalid="this.setCustomValidity('Cannot use numbers in subject')" oninput="this.setCustomValidity('')" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select name="priority" class="form-control no-icon">
+            <option value="LOW">Low</option>
+            <option value="MEDIUM" selected>Medium</option>
+            <option value="HIGH">High</option>
+            <option value="URGENT">Urgent</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Messages</label>
+          <textarea name="description" class="form-control" rows="5" placeholder="Describe your issue in detail..." required></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Add attachment(evidence)</label>
+          <input type="file" name="evidence" class="form-control" accept="image/png, image/jpeg, image/jpg" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('newTicketModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="width:auto">Submit Ticket</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<!-- Search Tickets Modal -->
+<div class="modal-overlay" id="searchTicketModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h5><i data-lucide="search" class="icon-sm"></i> Search My Tickets</h5>
+      <button class="modal-close" onclick="closeModal('searchTicketModal')">×</button>
+    </div>
+    <form th:action="@{/customer/support/tickets}" method="get">
+      <div class="modal-body">
+        <div class="form-group">
+          <label class="form-label">Search by Subject or Name</label>
+          <input type="text" name="searchName" class="form-control no-icon" placeholder="Type name or subject..." required/>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('searchTicketModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="width:auto">Search Tickets</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<script th:src="@{/js/main.js}"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    lucide.createIcons();
+    // Hover effects for the cards
+    document.querySelectorAll('.stat-card').forEach(card => {
+        card.addEventListener('mouseenter', () => {
+            card.style.transform = 'translateY(-5px)';
+            card.style.boxShadow = '0 10px 25px rgba(0,0,0,0.05)';
+            card.style.borderColor = 'var(--primary)';
+        });
+        card.addEventListener('mouseleave', () => {
+            card.style.transform = 'none';
+            card.style.boxShadow = 'var(--shadow-sm)';
+            card.style.borderColor = 'var(--border)';
+        });
+    });
+  });
+</script>
+</body>
+</html>

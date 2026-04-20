@@ -1,0 +1,135 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+<title>Support</title><link rel="stylesheet" th:href="@{/css/styles.css}"/></head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/customer-sidebar :: customerSidebar('support')}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h4>
+          <a th:href="@{/customer/support}" class="text-muted"><i data-lucide="arrow-left" class="icon-sm"></i></a>
+          <span style="margin-left: 8px;">My Tickets</span>
+        </h4>
+        <p>Track your support tickets</p>
+      </div>
+      <div class="topbar-right"><button class="btn btn-primary btn-sm" onclick="openModal('newTicketModal')"><i data-lucide="plus" class="icon-sm"></i> New Ticket</button></div>
+    </div>
+    <div class="page-body">
+      <div th:if="${success}" class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> <span th:text="${success}"></span></div>
+
+      <div class="card">
+        <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+          <h5>
+            My Tickets (<span th:text="${tickets.size()}">0</span>)
+            <span th:if="${searchName != null}" class="text-muted" style="font-weight:normal; font-size:14px; margin-left:8px;">
+              - Searching for: &quot;<span th:text="${searchName}"></span>&quot;
+            </span>
+          </h5>
+          <a th:if="${searchName != null}" th:href="@{/customer/support/tickets}" class="btn btn-sm btn-secondary" style="background:#e2e8f0; color:#1e293b; border:none; display:inline-flex; align-items:center; gap:4px; font-size:12px; padding:4px 10px;">
+            <i data-lucide="x" class="icon-sm" style="width:14px; height:14px;"></i> Clear Search
+          </a>
+        </div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th>#</th><th>Subject</th><th>Priority</th><th>Status</th><th>Response</th><th>Date</th></tr></thead>
+            <tbody>
+              <tr th:if="${tickets.empty}"><td colspan="6"><div class="empty-state"><div class="empty-icon"><i data-lucide="ticket" class="icon-sm"></i></div><h4>No tickets yet</h4><p>Create a support ticket if you need help</p></div></td></tr>
+              <tr th:each="t : ${tickets}">
+                <td>#<span th:text="${t.id}">1</span></td>
+                <td>
+                  <strong th:text="${t.subject}">Subject</strong>
+                  <div class="text-sm text-muted" style="margin-top: 4px;">
+                    <span th:if="${t.customerName != null}"><i data-lucide="user" class="icon-sm" style="width:12px; height:12px;"></i> <span th:text="${t.customerName}"></span></span>
+                    <span th:if="${t.customerIdNumber != null}" style="margin-left: 8px;"><i data-lucide="hash" class="icon-sm" style="width:12px; height:12px;"></i> <span th:text="${t.customerIdNumber}"></span></span>
+                  </div>
+                  <div class="text-sm text-muted" style="margin-top: 4px;" th:text="${t.description?.length() > 60 ? t.description.substring(0,60)+'...' : t.description}"></div>
+                  <div th:if="${t.attachmentPath != null}" style="margin-top: 8px;">
+                    <a th:href="@{'/uploads/tickets/' + ${t.attachmentPath}}" target="_blank" class="btn btn-sm" style="background:#f1f5f9; color:#334155; border:1px solid #e2e8f0; padding:2px 8px; font-size:12px; display:inline-flex; align-items:center; gap:4px;">
+                      <i data-lucide="image" class="icon-sm" style="width:14px; height:14px;"></i> View Attached Image
+                    </a>
+                  </div>
+                </td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${t.priority.name()=='URGENT'} ? 'badge-danger' :
+                                        (${t.priority.name()=='HIGH'} ? 'badge-warning' :
+                                        (${t.priority.name()=='MEDIUM'} ? 'badge-info' : 'badge-secondary'))"
+                        th:text="${t.priority}">MEDIUM</span>
+                </td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${t.status.name()=='OPEN'} ? 'badge-warning' :
+                                        (${t.status.name()=='IN_PROGRESS'} ? 'badge-info' :
+                                        (${t.status.name()=='RESOLVED'} ? 'badge-success' : 'badge-secondary'))"
+                        th:text="${t.status.name() == 'OPEN' ? 'Ticket received' : t.status}">OPEN</span>
+                </td>
+                <td>
+                  <span th:if="${t.adminResponse != null}" class="text-sm" th:text="${t.adminResponse.length() > 50 ? t.adminResponse.substring(0,50)+'...' : t.adminResponse}">Response</span>
+                  <span th:if="${t.adminResponse == null}" class="text-muted text-sm">Awaiting response...</span>
+                </td>
+                <td th:text="${#temporals.format(t.createdAt, 'dd MMM yyyy')}">Date</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-overlay" id="newTicketModal">
+  <div class="modal">
+    <div class="modal-header"><h5><i data-lucide="ticket" class="icon-sm"></i> New Support Ticket</h5><button class="modal-close" onclick="closeModal('newTicketModal')">×</button></div>
+    <form th:action="@{/customer/support/create}" method="post" enctype="multipart/form-data">
+      <div class="modal-body">
+        <div class="form-group" style="display:flex; gap:16px;">
+          <div style="flex:1;">
+            <label class="form-label">Customer Name</label>
+            <input type="text" name="customerName" class="form-control no-icon" placeholder="Your full name" required/>
+          </div>
+          <div style="flex:1;">
+            <label class="form-label">Customer ID Number</label>
+            <input type="text" name="customerIdNumber" class="form-control no-icon" placeholder="e.g. 123456789V" required/>
+          </div>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Subject</label>
+          <input type="text" name="subject" class="form-control no-icon" placeholder="Brief subject..." pattern="^[^0-9]*$" title="Cannot use numbers in subject" oninvalid="this.setCustomValidity('Cannot use numbers in subject')" oninput="this.setCustomValidity('')" required/>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Priority</label>
+          <select name="priority" class="form-control no-icon">
+            <option value="LOW">Low</option>
+            <option value="MEDIUM" selected>Medium</option>
+            <option value="HIGH">High</option>
+            <option value="URGENT">Urgent</option>
+          </select>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Messages</label>
+          <textarea name="description" class="form-control" rows="5" placeholder="Describe your issue in detail..." required></textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">Add attachment(evidence)</label>
+          <input type="file" name="evidence" class="form-control" accept="image/png, image/jpeg, image/jpg" />
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" onclick="closeModal('newTicketModal')">Cancel</button>
+        <button type="submit" class="btn btn-primary" style="width:auto">Submit Ticket</button>
+      </div>
+    </form>
+  </div>
+</div>
+<script th:src="@{/js/main.js}"></script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    lucide.createIcons();
+  });
+</script>
+</body>
+</html>

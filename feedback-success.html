@@ -1,0 +1,50 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Feedback Submitted — Fixora</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}"/>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/customer-sidebar :: customerSidebar('feedback')}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left">
+        <h4><i data-lucide="star" class="icon-sm"></i> Feedback</h4>
+        <p>Rate your completed paid service experiences</p>
+      </div>
+    </div>
+    <div class="page-body">
+      <div class="card" style="text-align:center;padding:60px 20px; max-width: 600px; margin: 40px auto;">
+        <div style="margin-bottom:24px; color: var(--success); display:flex; justify-content:center;">
+          <div style="background: rgba(40, 167, 69, 0.1); width: 100px; height: 100px; border-radius: 50%; display: flex; align-items: center; justify-content: center;">
+            <i data-lucide="check-circle" style="width: 48px; height: 48px;"></i>
+          </div>
+        </div>
+        <h3 style="margin-bottom:12px; font-weight: 800; font-size: 24px;">Thank you for your feedback!</h3>
+        <p style="color:var(--text-muted);font-size:15px;line-height:1.6;margin-bottom:32px;">
+          Your review has been successfully submitted. We greatly appreciate your time and input as it helps us continuously improve our services.
+        </p>
+        <div style="display:flex; gap:16px; justify-content:center;">
+          <a th:href="@{/customer/feedback}" class="btn btn-outline" style="width:auto; padding: 12px 24px;">
+            <i data-lucide="arrow-left" class="icon-sm"></i> Go Back
+          </a>
+          <a th:href="@{/customer/dashboard}" class="btn btn-primary" style="width:auto; padding: 12px 24px;">
+            <i data-lucide="home" class="icon-sm"></i> Return to Dashboard
+          </a>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script th:src="@{/js/main.js}"></script>
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    lucide.createIcons();
+  });
+</script>
+</body>
+</html>

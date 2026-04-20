@@ -1,0 +1,174 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Support Tickets — Admin</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}"/>
+  <style>.sidebar{background:linear-gradient(180deg,#1e2d42 0%,#151f2e 100%)}</style>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/admin-sidebar :: adminSidebar('tickets')}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left"><h4><i data-lucide="ticket" class="icon-sm"></i> Support Tickets</h4><p>Handle customer support requests</p></div>
+      <div class="topbar-right">
+        <div class="topbar-avatar" style="background:linear-gradient(135deg,#c0392b,#e74c3c)"
+             th:text="${currentUser?.fullName?.substring(0,1)?.toUpperCase()}">A</div>
+      </div>
+    </div>
+    <div class="page-body">
+      <div th:if="${success}" class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> <span th:text="${success}"></span></div>
+
+      <!-- Stats row -->
+      <div class="stats-grid mb-28" style="grid-template-columns:repeat(4,1fr)">
+        <div class="stat-card">
+          <div class="stat-icon yellow"><i data-lucide="mail-open" class="icon-sm"></i></div>
+          <div class="stat-info">
+            <div class="value" th:text="${tickets.?[status.name() == 'OPEN'].size()}">0</div>
+            <div class="label">Tickets Received</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon blue"><i data-lucide="settings" class="icon-sm"></i></div>
+          <div class="stat-info">
+            <div class="value" th:text="${tickets.?[status.name() == 'IN_PROGRESS'].size()}">0</div>
+            <div class="label">In Progress</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon green"><i data-lucide="check-circle" class="icon-sm"></i></div>
+          <div class="stat-info">
+            <div class="value" th:text="${tickets.?[status.name() == 'RESOLVED'].size()}">0</div>
+            <div class="label">Resolved</div>
+          </div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-icon red"><i data-lucide="alert-triangle" class="icon-sm"></i></div>
+          <div class="stat-info">
+            <div class="value" th:text="${tickets.?[priority.name() == 'URGENT'].size()}">0</div>
+            <div class="label">Urgent</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="card">
+        <div class="card-header"><h5>All Tickets (<span th:text="${tickets.size()}">0</span>)</h5></div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead><tr><th>#</th><th>Customer</th><th>Subject</th><th>Priority</th><th>Status</th><th>Created</th><th>Actions</th></tr></thead>
+            <tbody>
+              <tr th:if="${tickets.empty}">
+                <td colspan="7"><div class="empty-state"><div class="empty-icon"><i data-lucide="ticket" class="icon-sm"></i></div><h4>No tickets yet</h4></div></td>
+              </tr>
+              <tr th:each="t : ${tickets}">
+                <td><strong>#<span th:text="${t.id}">1</span></strong></td>
+                <td>
+                  <div class="fw-600" th:text="${t.customerName != null ? t.customerName : t.customer?.fullName}">Customer</div>
+                  <div class="text-sm text-muted" th:text="${t.customerIdNumber != null ? 'ID: ' + t.customerIdNumber : t.customer?.email}">email</div>
+                </td>
+                <td>
+                  <div class="fw-600">
+                    <span th:text="${t.subject}">Subject</span>
+                    <i data-lucide="paperclip" class="icon-sm text-muted" th:if="${t.attachmentPath != null}" title="Has attachment" style="margin-left: 5px;"></i>
+                  </div>
+                  <div class="text-sm text-muted" th:text="${t.description?.length() > 60 ? t.description.substring(0,60)+'...' : t.description}"></div>
+                </td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${t.priority.name()=='URGENT'} ? 'badge-danger' :
+                                        (${t.priority.name()=='HIGH'} ? 'badge-warning' :
+                                        (${t.priority.name()=='MEDIUM'} ? 'badge-info' : 'badge-secondary'))"
+                        th:text="${t.priority}">MEDIUM</span>
+                </td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${t.status.name()=='OPEN'} ? 'badge-warning' :
+                                        (${t.status.name()=='IN_PROGRESS'} ? 'badge-info' :
+                                        (${t.status.name()=='RESOLVED'} ? 'badge-success' : 'badge-secondary'))"
+                        th:text="${t.status.name() == 'OPEN' ? 'Ticket received' : t.status}">OPEN</span>
+                </td>
+                <td th:text="${#temporals.format(t.createdAt,'dd MMM yyyy')}">Date</td>
+                <td>
+                  <button class="btn btn-sm btn-outline"
+                          th:onclick="'openModal(\'respond_' + ${t.id} + '\')'"><i data-lucide="message-square" class="icon-sm"></i> Respond</button>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Response Modals -->
+<div th:each="t : ${tickets}">
+  <div class="modal-overlay" th:id="'respond_' + ${t.id}">
+    <div class="modal">
+      <div class="modal-header">
+        <h5><i data-lucide="message-square" class="icon-sm"></i> Ticket #<span th:text="${t.id}">1</span> — <span th:text="${t.subject}">Subject</span></h5>
+        <button class="modal-close" th:onclick="'closeModal(\'respond_' + ${t.id} + '\')'">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- Customer message -->
+        <div style="background:var(--body-bg);padding:14px;border-radius:10px;margin-bottom:16px;">
+          <div class="text-sm fw-600" style="margin-bottom:6px">
+            <i data-lucide="mail" class="icon-sm"></i> From: <span th:text="${t.customerName != null ? t.customerName : t.customer?.fullName}">Customer</span>
+            <span class="text-muted" th:if="${t.customerIdNumber != null}" th:text="'(ID: ' + ${t.customerIdNumber} + ')'" style="font-weight: normal; margin-left: 4px;"></span>
+            <span class="badge" style="margin-left:8px"
+                  th:classappend="${t.priority.name()=='URGENT'} ? 'badge-danger' :
+                                  (${t.priority.name()=='HIGH'} ? 'badge-warning' : 'badge-info')"
+                  th:text="${t.priority}">MEDIUM</span>
+          </div>
+          <div class="text-sm" th:text="${t.description}">Description</div>
+          <div th:if="${t.attachmentPath != null}" style="margin-top: 12px;">
+            <a th:href="@{'/uploads/tickets/' + ${t.attachmentPath}}" target="_blank" class="btn btn-sm" style="display:inline-flex;align-items:center;gap:5px;background:#e2e8f0;color:#1e293b;border:none;">
+              <i data-lucide="image" class="icon-sm"></i> View Evidence
+            </a>
+          </div>
+        </div>
+
+        <!-- Previous response if any -->
+        <div th:if="${t.adminResponse != null}"
+             style="background:#f0f5ff;padding:14px;border-radius:10px;border-left:3px solid var(--primary);margin-bottom:16px;">
+          <div class="text-sm fw-600" style="margin-bottom:6px"><i data-lucide="send" class="icon-sm"></i> Previous Response:</div>
+          <div class="text-sm" th:text="${t.adminResponse}"></div>
+        </div>
+
+        <form th:action="@{/admin/support-tickets/{id}/respond(id=${t.id})}" method="post">
+          <div class="form-group">
+            <label class="form-label">Update Status</label>
+            <select name="status" class="form-control" required>
+              <option value="OPEN" th:selected="${t.status.name() == 'OPEN'}">Ticket received</option>
+              <option value="IN_PROGRESS" th:selected="${t.status.name() == 'IN_PROGRESS'}">In Progress</option>
+              <option value="RESOLVED" th:selected="${t.status.name() == 'RESOLVED'}">Resolved</option>
+              <option value="CLOSED" th:selected="${t.status.name() == 'CLOSED'}">Closed</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label class="form-label">Your Response</label>
+            <textarea name="response" class="form-control" rows="4"
+                      placeholder="Type your response to the customer..." th:text="${t.adminResponse}" required></textarea>
+          </div>
+          <div class="modal-footer" style="padding:0;border:none;margin-top:8px">
+            <button type="button" class="btn btn-secondary"
+                    th:onclick="'closeModal(\'respond_' + ${t.id} + '\')'">Cancel</button>
+            <button type="submit" class="btn btn-primary" style="width:auto"><i data-lucide="send" class="icon-sm"></i> Save & Send Response</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script th:src="@{/js/main.js}"></script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    lucide.createIcons();
+  });
+</script>
+</body>
+</html>

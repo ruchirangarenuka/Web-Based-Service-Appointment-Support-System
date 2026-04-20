@@ -1,0 +1,397 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+    <title>Payments — Admin</title>
+    <link rel="stylesheet" th:href="@{/css/styles.css}"/>
+    <style>
+        .sidebar { background: linear-gradient(180deg,#1e2d42 0%,#151f2e 100%); }
+        .receipt-thumb {
+            width: 72px; height: 52px; object-fit: cover; border-radius: 7px;
+            border: 2px solid var(--border); cursor: pointer; transition: transform .2s, border-color .2s;
+        }
+        .receipt-thumb:hover { transform: scale(1.1); border-color: var(--primary); }
+        .pulse { animation: pulse-anim 1.8s infinite; }
+        @keyframes pulse-anim { 0%,100%{opacity:1}50%{opacity:0.55} }
+
+        /* ============================================================
+           ✅ NEW ADDITION #1 — Commission card + badge styles
+           Add these CSS classes after your existing .pulse style above
+           ============================================================ */
+        .commission-card {
+            background: linear-gradient(135deg, #1e3a8a 0%, #1d4ed8 100%);
+            border-radius: 16px;
+            padding: 24px 28px;
+            color: #fff;
+            margin-bottom: 28px;
+            box-shadow: 0 10px 25px rgba(37,99,235,0.2);
+        }
+        .commission-card .cc-title {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 18px;
+            display: flex;
+            align-items: center;
+            gap: 7px;
+        }
+        .commission-card .cc-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 0;
+        }
+        @media (max-width: 900px) {
+            .commission-card .cc-grid { grid-template-columns: 1fr 1fr; gap: 16px; }
+        }
+        .commission-card .cc-item {
+            padding: 0 24px;
+            border-right: 1px solid rgba(255,255,255,0.12);
+        }
+        .commission-card .cc-item:first-child { padding-left: 0; }
+        .commission-card .cc-item:last-child  { border-right: none; }
+        .commission-card .cc-label {
+            font-size: 11.5px;
+            color: rgba(255,255,255,0.55);
+            margin-bottom: 6px;
+        }
+        .commission-card .cc-value {
+            font-size: 22px;
+            font-weight: 800;
+            color: #fff;
+            line-height: 1;
+        }
+        .commission-card .cc-value.highlight { color: #fde68a; }
+        .commission-card .cc-sub {
+            font-size: 11px;
+            color: rgba(255,255,255,0.45);
+            margin-top: 4px;
+        }
+        /* Blue badge — shown in tables for commission amount */
+        .comm-badge {
+            display: inline-block;
+            background: rgba(37,99,235,0.1);
+            color: #1d4ed8;
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 5px;
+        }
+        /* Green badge — shown in tables for staff payout amount */
+        .payout-badge {
+            display: inline-block;
+            background: rgba(16,185,129,0.1);
+            color: #065f46;
+            font-size: 10.5px;
+            font-weight: 700;
+            padding: 2px 7px;
+            border-radius: 5px;
+        }
+        /*end
+
+
+    </style>
+</head>
+<body>
+<div class="app-layout">
+    <div th:replace="~{fragments/admin-sidebar :: adminSidebar('payments')}"></div>
+    <div class="main-content">
+        <div class="topbar">
+            <div class="topbar-left">
+                <h4><i data-lucide="credit-card" class="icon-sm"></i> Payment Management</h4>
+                <p>Review bank transfer receipts and manage all transactions</p>
+            </div>
+            <div class="topbar-right">
+        <span th:if="${pendingReceipts.size() > 0}"
+              class="badge badge-warning pulse"
+              style="font-size:13px;padding:7px 14px">
+          <i data-lucide="hourglass" class="icon-sm"></i> <span th:text="${pendingReceipts.size()}">0</span> Awaiting Confirmation
+        </span>
+                <div class="topbar-avatar" style="background:linear-gradient(135deg,#c0392b,#e74c3c)"
+                     th:text="${currentUser?.fullName?.substring(0,1)?.toUpperCase()}">A</div>
+            </div>
+        </div>
+
+        <div class="page-body">
+            <div th:if="${success}" class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> <span th:text="${success}"></span></div>
+            <div th:if="${error}"   class="alert alert-danger"><i data-lucide="ban" class="icon-sm"></i> <span th:text="${error}"></span></div>
+
+            <!-- KPI Row -->
+            <div class="stats-grid mb-28" style="grid-template-columns:repeat(4,1fr)">
+                <div class="stat-card">
+                    <div class="stat-icon yellow"><i data-lucide="hourglass" class="icon-sm"></i></div>
+                    <div class="stat-info">
+                        <div class="value" th:text="${pendingReceipts.size()}">0</div>
+                        <div class="label">Awaiting Confirmation</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon green"><i data-lucide="check-circle" class="icon-sm"></i></div>
+                    <div class="stat-info">
+                        <div class="value" th:text="${confirmedPaymentsCount}">0</div>
+                        <div class="label">Confirmed Payments</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon blue"><i data-lucide="credit-card" class="icon-sm"></i></div>
+                    <div class="stat-info">
+                        <div class="value" th:text="${allPayments.size()}">0</div>
+                        <div class="label">Total Transactions</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-icon purple"><i data-lucide="dollar-sign" class="icon-sm"></i></div>
+                    <div class="stat-info">
+                        <div class="value" style="font-size:18px">Rs.<span th:text="${#numbers.formatDecimal(totalRevenue,0,'COMMA',0,'POINT')}">0</span></div>
+                        <div class="label">Total Revenue</div>
+                    </div>
+                </div>
+            </div>
+            <!--===✅ NEW ADDITION #3 — Commission Summary Banner===-->
+            <div class="commission-card">
+                <div class="cc-title">
+                    <i data-lucide="percent" class="icon-sm"></i>
+                    Commission &amp; Payout Summary — Platform Rate:
+                    <strong style="color:#fde68a" th:text="${commissionRate}">10</strong>%
+                </div>
+                <div class="cc-grid">
+                    <div class="cc-item">
+                        <div class="cc-label">💰 Total Collected</div>
+                        <div class="cc-value">
+                            Rs. <span th:text="${#numbers.formatDecimal(totalRevenue,0,'COMMA',0,'POINT')}">0</span>
+                        </div>
+                        <div class="cc-sub">Gross amount from customers</div>
+                    </div>
+                    <div class="cc-item">
+                        <div class="cc-label">🏦 Platform Commission (<span th:text="${commissionRate}">10</span>%)</div>
+                        <div class="cc-value highlight">
+                            Rs. <span th:text="${#numbers.formatDecimal(totalCommission,0,'COMMA',0,'POINT')}">0</span>
+                        </div>
+                        <div class="cc-sub">Your website's earnings</div>
+                    </div>
+                    <div class="cc-item">
+                        <div class="cc-label">👷 Staff Payout (90%)</div>
+                        <div class="cc-value">
+                            Rs. <span th:text="${#numbers.formatDecimal(totalStaffPayout,0,'COMMA',0,'POINT')}">0</span>
+                        </div>
+                        <div class="cc-sub">Amount due to workers</div>
+                    </div>
+                    <div class="cc-item">
+                        <div class="cc-label">✅ Confirmed Payments</div>
+                        <div class="cc-value" th:text="${confirmedPaymentsCount}">0</div>
+                        <div class="cc-sub">Commission calculated on these</div>
+                    </div>
+                </div>
+            </div>
+            <!-- ✅ END OF NEW ADDITION #3 -->
+
+
+
+
+            <!-- ─── PENDING RECEIPTS — ACTION REQUIRED ─── -->
+            <div th:if="${!#lists.isEmpty(pendingReceipts)}" class="card mb-28" style="border:2px solid #ffc107;">
+                <div class="card-header" style="background:linear-gradient(135deg,#fff3cd,#ffeeba);border-bottom:1px solid #ffc107;">
+                    <h5 style="color:#856404"><i data-lucide="hourglass" class="icon-sm"></i> Bank Transfer Receipts — Action Required (<span th:text="${pendingReceipts.size()}">0</span>)</h5>
+                </div>
+                <div class="table-wrap">
+                    <table class="tbl">
+                        <thead><tr><th>#</th><th>Customer</th><th>Service &amp; Appointment</th><th>Amount</th><th>Commission (<span th:text="${commissionRate}">10</span>%)</th><th>Invoice No.</th><th>Receipt</th><th>Uploaded</th><th>Actions</th></tr></thead>
+                        <tbody>
+                        <tr th:each="pay : ${pendingReceipts}">
+                            <td><strong>#<span th:text="${pay.id}">1</span></strong></td>
+                            <td>
+                                <div class="fw-600" th:text="${pay.customer?.fullName}">Name</div>
+                                <div class="text-sm text-muted" th:text="${pay.customer?.email}">email</div>
+                            </td>
+                            <td>
+                                <div class="fw-600" th:text="${pay.appointment?.service?.name}">Service</div>
+                                <div class="text-sm text-muted" th:text="${pay.appointment?.appointmentDate}">Date</div>
+                            </td>
+                            <td><strong style="color:var(--primary); font-size:15px">Rs. <span th:text="${#numbers.formatDecimal(pay.amount,0,'COMMA',2,'POINT')}">0</span></strong></td>
+                            <td>
+                                <span class="comm-badge">
+                                    Rs. <span th:text="${#numbers.formatDecimal(pay.amount * 0.10, 0, 'COMMA', 2, 'POINT')}">0</span>
+                                </span>
+                            </td>
+                            <td>
+                                <span class="payout-badge">
+                                    Rs. <span th:text="${#numbers.formatDecimal(pay.amount * 0.90, 0, 'COMMA', 2, 'POINT')}">0</span>
+                                </span>
+                            </td>
+                            <td><code style="background:var(--body-bg);padding:3px 8px;border-radius:5px;font-size:11px" th:text="${pay.invoiceNumber}">INV</code></td>
+                            <td>
+                                <img th:if="${pay.receiptImagePath != null}"
+                                     th:src="@{/admin/payments/receipt/{f}(f=${pay.receiptImagePath})}"
+                                     class="receipt-thumb"
+                                     alt="Receipt"
+                                     th:onclick="'openModal(\'vr_'+${pay.id}+'\')'"/>
+                                <span th:if="${pay.receiptImagePath == null}" class="badge badge-danger">No file</span>
+                            </td>
+                            <td th:text="${#temporals.format(pay.createdAt,'dd MMM HH:mm')}">Time</td>
+                            <td>
+                                <div style="display:flex;flex-direction:column;gap:6px">
+                                    <form th:action="@{/admin/payments/{id}/confirm(id=${pay.id})}" method="post">
+                                        <button class="btn btn-sm btn-success" style="width:100%"
+                                                data-confirm="Confirm this bank transfer payment?"><i data-lucide="check-circle" class="icon-sm"></i> Confirm</button>
+                                    </form>
+                                    <form th:action="@{/admin/payments/{id}/reject(id=${pay.id})}" method="post">
+                                        <input type="hidden" name="reason" value="Receipt rejected by admin"/>
+                                        <button class="btn btn-sm btn-danger" style="width:100%"
+                                                data-confirm="Reject this receipt?"><i data-lucide="x" class="icon-sm"></i> Reject</button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- ─── ALL PAYMENTS ─── -->
+            <div class="card">
+                <div class="card-header"><h5>All Transactions (<span th:text="${allPayments.size()}">0</span>)</h5></div>
+                <div class="table-wrap">
+                    <table class="tbl">
+                        <thead><tr><th>#</th><th>Invoice</th><th>Customer</th><th>Service</th><th>Amount</th><th>Method</th><th>Status</th><th>Commission</th>
+                            <th>Staff Payout</th><th>Receipt</th><th>Date</th><th>Action</th></tr></thead>
+                        <tbody>
+                        <tr th:if="${#lists.isEmpty(allPayments)}">
+                            <td colspan="10"><div class="empty-state"><div class="empty-icon"><i data-lucide="credit-card" class="icon-sm"></i></div><h4>No payments yet</h4></div></td>
+                        </tr>
+                        <tr th:each="pay : ${allPayments}">
+                            <td>#<span th:text="${pay.id}">1</span></td>
+                            <td><span style="font-family:monospace;font-size:11px;background:var(--body-bg);padding:2px 6px;border-radius:4px" th:text="${pay.invoiceNumber}">INV</span></td>
+                            <td>
+                                <div th:text="${pay.customer?.fullName}">Name</div>
+                                <div class="text-sm text-muted" th:text="${pay.customer?.phone}">phone</div>
+                            </td>
+                            <td>
+                                <div th:text="${pay.appointment?.service?.name}">Service</div>
+                                <div class="text-sm text-muted" th:text="${pay.appointment?.appointmentDate}">Date</div>
+                            </td>
+                            <td><strong style="color:var(--primary)">Rs. <span th:text="${#numbers.formatDecimal(pay.amount,0,'COMMA',2,'POINT')}">0</span></strong></td>
+                            <td>
+                  <span class="badge"
+                        th:classappend="${pay.method.name()=='CARD'} ? 'badge-info' : (${pay.method.name()=='CASH'} ? 'badge-success' : 'badge-primary')"
+                        th:utext="${pay.method.name()=='CARD'} ? '<i data-lucide=&quot;credit-card&quot; class=&quot;icon-sm&quot;></i> Card' : (${pay.method.name()=='CASH'} ? '💵 Cash' : '🏦 Bank Transfer')">Method</span>
+                            </td>
+                            <td>
+                  <span class="badge"
+                        th:classappend="${pay.status.name()=='PAID'} ? 'badge-success' :
+                                        (${pay.status.name()=='RECEIPT_UPLOADED'} ? 'badge-warning' :
+                                        (${pay.status.name()=='FAILED'} ? 'badge-danger' : 'badge-secondary'))"
+                        th:text="${pay.status}">Status</span>
+                            </td>
+                            <!----====NEW 07 =====--->
+
+                            <td>
+                                <span th:if="${pay.commissionAmount != null}" class="comm-badge">
+                                    Rs. <span th:text="${#numbers.formatDecimal(pay.commissionAmount,0,'COMMA',2,'POINT')}">0</span>
+                                </span>
+                                <span th:if="${pay.commissionAmount == null}" class="text-muted text-sm">—</span>
+                            </td>
+                            <td>
+                                <span th:if="${pay.staffPayout != null}" class="payout-badge">
+                                    Rs. <span th:text="${#numbers.formatDecimal(pay.staffPayout,0,'COMMA',2,'POINT')}">0</span>
+                                </span>
+                                <span th:if="${pay.staffPayout == null}" class="text-muted text-sm">—</span>
+                            </td>
+                            <!-- ✅ END OF NEW ADDITION #7 -->
+
+
+                            <td>
+                                <img th:if="${pay.receiptImagePath != null}"
+                                     th:src="@{/admin/payments/receipt/{f}(f=${pay.receiptImagePath})}"
+                                     class="receipt-thumb" alt="Receipt"
+                                     th:onclick="'openModal(\'vr_'+${pay.id}+'\')'"/>
+                                <span th:if="${pay.receiptImagePath == null}" class="text-muted text-sm">—</span>
+                            </td>
+                            <td th:text="${#temporals.format(pay.createdAt,'dd MMM yyyy')}">Date</td>
+                            <td>
+                                <div class="flex-gap-8">
+                                    <a th:href="@{/admin/payments/{id}/invoice(id=${pay.id})}"
+                                       class="btn btn-sm btn-outline">🧾 Invoice</a>
+                                    <form th:if="${pay.status.name()=='RECEIPT_UPLOADED'}"
+                                          th:action="@{/admin/payments/{id}/confirm(id=${pay.id})}" method="post">
+                                        <button class="btn btn-sm btn-success"><i data-lucide="check-circle" class="icon-sm"></i></button>
+                                    </form>
+                                </div>
+                            </td>
+                        </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Receipt View Modals (for all payments with receipts) -->
+<div th:each="pay : ${allPayments}" th:if="${pay.receiptImagePath != null}">
+    <div class="modal-overlay" th:id="'vr_' + ${pay.id}">
+        <div class="modal" style="max-width:640px">
+            <div class="modal-header">
+                <h5>📄 Bank Transfer Receipt — #<span th:text="${pay.id}">1</span></h5>
+                <button class="modal-close" th:onclick="'closeModal(\'vr_'+${pay.id}+'\')'">×</button>
+            </div>
+            <div class="modal-body">
+                <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:16px;padding:14px;background:var(--body-bg);border-radius:10px">
+                    <div class="text-sm"><div class="text-muted" style="font-size:11px;margin-bottom:2px">CUSTOMER</div><strong th:text="${pay.customer?.fullName}"></strong></div>
+                    <div class="text-sm"><div class="text-muted" style="font-size:11px;margin-bottom:2px">AMOUNT</div><strong style="color:var(--primary)">Rs. <span th:text="${#numbers.formatDecimal(pay.amount,0,'COMMA',2,'POINT')}"></span></strong></div>
+                    <div class="text-sm"><div class="text-muted" style="font-size:11px;margin-bottom:2px">INVOICE</div><strong th:text="${pay.invoiceNumber}"></strong></div>
+                </div>
+
+                <!--==NEW 08==-->
+                <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px;">
+                    <div style="padding:10px 14px;background:#eff6ff;border-radius:9px;border-left:3px solid #2563eb;">
+                        <div style="font-size:10.5px;color:#1e40af;font-weight:600;margin-bottom:3px;">
+                            🏦 PLATFORM COMMISSION (10%)
+                        </div>
+                        <div style="font-size:16px;font-weight:800;color:#1e40af;">
+                            Rs. <span th:text="${#numbers.formatDecimal(pay.amount * 0.10, 0, 'COMMA', 2, 'POINT')}">0</span>
+                        </div>
+                        <div style="font-size:10px;color:#3b82f6;margin-top:3px;">Your website's cut</div>
+                    </div>
+                    <div style="padding:10px 14px;background:#f0fdf4;border-radius:9px;border-left:3px solid #10b981;">
+                        <div style="font-size:10.5px;color:#065f46;font-weight:600;margin-bottom:3px;">
+                            👷 STAFF PAYOUT (90%)
+                        </div>
+                        <div style="font-size:16px;font-weight:800;color:#065f46;">
+                            Rs. <span th:text="${#numbers.formatDecimal(pay.amount * 0.90, 0, 'COMMA', 2, 'POINT')}">0</span>
+                        </div>
+                        <div style="font-size:10px;color:#10b981;margin-top:3px;">Amount due to worker</div>
+                    </div>
+                </div>
+                <!-- ✅ END OF NEW ADDITION #8 -->
+
+                <img th:src="@{/admin/payments/receipt/{f}(f=${pay.receiptImagePath})}"
+                     style="max-width:100%;border-radius:10px;border:1px solid var(--border)" alt="Receipt"/>
+                <div style="margin-top:16px">
+                    <div th:if="${pay.adminConfirmed}" class="alert alert-success" style="margin:0"><i data-lucide="check-circle" class="icon-sm"></i> Already confirmed by admin</div>
+                    <div th:if="${!pay.adminConfirmed and pay.status.name()=='RECEIPT_UPLOADED'}"
+                         style="display:flex;gap:10px">
+                        <form th:action="@{/admin/payments/{id}/confirm(id=${pay.id})}" method="post" style="flex:1">
+                            <button class="btn btn-success" style="width:100%"><i data-lucide="check-circle" class="icon-sm"></i> Confirm Payment</button>
+                        </form>
+                        <form th:action="@{/admin/payments/{id}/reject(id=${pay.id})}" method="post" style="flex:1">
+                            <input type="hidden" name="reason" value="Receipt rejected"/>
+                            <button class="btn btn-danger" style="width:100%"><i data-lucide="x" class="icon-sm"></i> Reject Receipt</button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script th:src="@{/js/main.js}"></script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+    document.addEventListener("DOMContentLoaded", function() {
+        lucide.createIcons();
+    });
+</script>
+</body>
+</html>

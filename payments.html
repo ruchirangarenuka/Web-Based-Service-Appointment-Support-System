@@ -1,0 +1,100 @@
+﻿<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+  <meta charset="UTF-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Payment History — Fixora</title>
+  <link rel="stylesheet" th:href="@{/css/styles.css}"/>
+</head>
+<body>
+<div class="app-layout">
+  <div th:replace="~{fragments/customer-sidebar :: customerSidebar('payments')}"></div>
+  <div class="main-content">
+    <div class="topbar">
+      <div class="topbar-left"><h4><i data-lucide="credit-card" class="icon-sm"></i> Payment History</h4><p>All your transactions and invoices</p></div>
+    </div>
+    <div class="page-body">
+      <div th:if="${success}" class="alert alert-success"><i data-lucide="check-circle" class="icon-sm"></i> <span th:text="${success}"></span></div>
+
+      <div class="card">
+        <div class="card-header"><h5>All Payments (<span th:text="${payments.size()}">0</span>)</h5></div>
+        <div class="table-wrap">
+          <table class="tbl">
+            <thead>
+              <tr><th>Invoice No.</th><th>Service</th><th>Amount</th><th>Method</th><th>Status</th><th>Date</th><th>Actions</th></tr>
+            </thead>
+            <tbody>
+              <tr th:if="${payments.empty}">
+                <td colspan="7">
+                  <div class="empty-state">
+                    <div class="empty-icon"><i data-lucide="credit-card" class="icon-sm"></i></div>
+                    <h4>No payments yet</h4>
+                    <p>Book a service and complete payment to see your history here</p>
+                    <a th:href="@{/customer/book-appointment}" class="btn btn-primary" style="width:auto;margin-top:12px">Book a Service</a>
+                  </div>
+                </td>
+              </tr>
+              <tr th:each="pay : ${payments}">
+                <td>
+                  <code style="background:var(--body-bg);padding:3px 8px;border-radius:5px;font-size:12px"
+                        th:text="${pay.invoiceNumber ?: 'INV-'+pay.id}">INV</code>
+                </td>
+                <td>
+                  <div class="fw-600" th:text="${pay.appointment?.service?.name}">Service</div>
+                  <div class="text-sm text-muted" th:text="${pay.appointment?.appointmentDate}">Date</div>
+                  <div th:if="${paymentJobMap.get(pay.id) != null and paymentJobMap.get(pay.id).assignedStaff != null}"
+                       class="worker-inline-row">
+                    <div class="worker-mini-avatar sm">
+                      <img th:if="${paymentJobMap.get(pay.id).assignedStaff.profilePictureUrl != null and !#strings.isEmpty(paymentJobMap.get(pay.id).assignedStaff.profilePictureUrl)}"
+                           th:src="@{${paymentJobMap.get(pay.id).assignedStaff.profilePictureUrl}}"
+                           alt="Worker photo"/>
+                      <span th:unless="${paymentJobMap.get(pay.id).assignedStaff.profilePictureUrl != null and !#strings.isEmpty(paymentJobMap.get(pay.id).assignedStaff.profilePictureUrl)}"
+                            th:text="${paymentJobMap.get(pay.id).assignedStaff.fullName.substring(0,1).toUpperCase()}">W</span>
+                    </div>
+                    <span class="worker-inline-name" th:text="${paymentJobMap.get(pay.id).assignedStaff.fullName}">Worker</span>
+                    <span class="worker-inline-role"
+                          th:text="${paymentJobMap.get(pay.id).assignedStaff.serviceType ?: 'Staff'}">Staff</span>
+                  </div>
+                </td>
+                <td>
+                  <strong style="color:var(--primary); font-size:15px">
+                    Rs. <span th:text="${#numbers.formatDecimal(pay.amount,0,'COMMA',2,'POINT')}">0</span>
+                  </strong>
+                </td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${pay.method.name()=='CARD'} ? 'badge-info' : 'badge-primary'"
+                        th:utext="${pay.method.name()=='CARD'} ? '<i data-lucide=&quot;credit-card&quot; class=&quot;icon-sm&quot;></i> Card' : '🏦 Bank Transfer'">Method</span>
+                </td>
+                <td>
+                  <span class="badge"
+                        th:classappend="${pay.status.name()=='PAID'} ? 'badge-success' :
+                                        (${pay.status.name()=='RECEIPT_UPLOADED'} ? 'badge-warning' :
+                                        (${pay.status.name()=='FAILED'} ? 'badge-danger' : 'badge-secondary'))">
+                    <span th:utext="${pay.status.name()=='PAID'} ? '<i data-lucide=&quot;check-circle&quot; class=&quot;icon-sm&quot;></i> Paid' :
+                                   (${pay.status.name()=='RECEIPT_UPLOADED'} ? '<i data-lucide=&quot;hourglass&quot; class=&quot;icon-sm&quot;></i> Awaiting Confirmation' :
+                                   (${pay.status.name()=='FAILED'} ? '<i data-lucide=&quot;x&quot; class=&quot;icon-sm&quot;></i> Failed' : pay.status))">Status</span>
+                  </span>
+                </td>
+                <td th:text="${#temporals.format(pay.createdAt,'dd MMM yyyy')}">Date</td>
+                <td>
+                  <a th:href="@{/customer/payment/invoice/{id}(id=${pay.id})}"
+                     class="btn btn-sm btn-outline">🧾 Invoice</a>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+<script th:src="@{/js/main.js}"></script>
+
+<script src="https://unpkg.com/lucide@latest"></script>
+<script>
+  document.addEventListener("DOMContentLoaded", function() {
+    lucide.createIcons();
+  });
+</script>
+</body>
+</html>
